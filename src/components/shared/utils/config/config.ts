@@ -1,11 +1,11 @@
 import { LocalStorageConstants, LocalStorageUtils, URLUtils } from '@deriv-com/utils';
 
 export const APP_IDS = {
-    LOCALHOST: 80058, // Keep for development
-    TMP_STAGING: 80058, // Keep for staging
-    STAGING: 80058,
-    STAGING_BE: 80058,
-    STAGING_ME: 80058,
+    LOCALHOST: 85159, // Keep for development
+    TMP_STAGING: 85159, // Keep for staging
+    STAGING: 85159,
+    STAGING_BE: 85159,
+    STAGING_ME: 85159,
     PRODUCTION: 85159, // Your app ID
     PRODUCTION_BE: 85159,
     PRODUCTION_ME: 85159,
