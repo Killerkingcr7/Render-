@@ -117,11 +117,8 @@ const AppWrapper = observer(() => {
         // Fetch the XML files and parse them
         const fetchBots = async () => {
             const botFiles = [
-                'Massive-recovery-by-Tickshark.xml',
-                'Envy-differ.xml',
-                'H_L auto vault.xml',
-                'Top-notch 2.xml',
                 'CALEB entry.xml',
+                'dec  entry point.xml',
                 // Add more paths to your XML files
             ];
             const botPromises = botFiles.map(async (file) => {
