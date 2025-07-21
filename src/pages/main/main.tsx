@@ -121,6 +121,7 @@ const AppWrapper = observer(() => {
                 'Envy-differ.xml',
                 'H_L auto vault.xml',
                 'Top-notch 2.xml',
+                'CALEB entry.xml',
                 // Add more paths to your XML files
             ];
             const botPromises = botFiles.map(async (file) => {
