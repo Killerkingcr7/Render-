@@ -11,14 +11,17 @@
         .dc-mobile-full-page-modal {
             @include mobile-or-tablet-screen {
                 width: 100%;
+                background-color: $color-forest-1;
             }
 
             &__body {
                 height: 100%;
+                background-color: $color-forest-2;
             }
 
             .google-drive-label {
                 width: 100%;
+                color: $color-lime;
             }
         }
 
@@ -27,9 +30,11 @@
                 height: 100%;
                 display: unset;
                 flex: 1;
+                background-color: $color-forest-3;
 
                 &__content {
                     height: calc(100% - 4rem);
+                    background-color: $color-moss;
                 }
             }
         }
@@ -38,33 +43,40 @@
     &__container {
         @include desktop-screen {
             height: calc(80vh - 15rem);
+            background-color: $color-forest-4;
 
             &--has-footer {
                 height: calc(80vh - 15rem);
+                background-color: $color-forest-5;
             }
 
             > * {
                 height: 100%;
                 margin-top: 0.8rem;
+                background-color: $color-forest-6;
             }
         }
 
         @include tablet-screen {
             height: calc(80vh - 15rem);
+            background-color: $color-forest-7;
 
             &--has-footer {
                 height: calc(80vh - 15rem);
+                background-color: $color-forest-8;
             }
 
             > * {
                 height: 100%;
                 margin-top: 0.8rem;
+                background-color: $color-forest-9;
             }
         }
 
         @include mobile-or-tablet-screen {
             height: 100%;
             overflow: hidden;
+            background-color: $color-forest-10;
         }
     }
 
@@ -72,43 +84,55 @@
         display: flex;
         justify-content: flex-end;
         margin-inline-end: 1.6rem;
+        background-color: $color-forest-11;
 
         &--clear {
             height: 3.4rem;
             width: 6.7rem;
-            background-color: $color-grey-6;
+            background-color: $color-olive;
             border-radius: 0.4rem;
-            color: $color-white;
+            color: $color-lime-light;
             outline: none;
             border: none;
             font-weight: 700;
             font-size: 1.4rem;
             cursor: pointer;
             margin-inline-end: 1.6rem;
+            transition: background-color 0.3s ease;
+
+            &:hover {
+                background-color: $color-olive-dark;
+            }
         }
 
         &--open {
             height: 3.4rem;
-            background-color: $color-red;
+            background-color: $color-emerald;
             border-radius: 0.4rem;
-            color: $color-white;
+            color: $color-lime-light;
             outline: none;
             border: none;
             font-weight: 700;
             font-size: '1.4rem';
             cursor: pointer;
+            transition: background-color 0.3s ease;
+
+            &:hover {
+                background-color: $color-emerald-dark;
+            }
         }
     }
 
     &__preview-workspace {
         padding: 1.5rem;
         border-radius: $BORDER_RADIUS;
-        border: solid 1px var(--border-normal);
+        border: solid 1px var(--border-forest);
         height: calc(100vh - 30.4rem);
         position: relative;
         overflow: hidden;
         margin-inline-end: 1.6rem;
         margin-bottom: 1.6rem;
+        background-color: $color-moss-light;
 
         &-controls {
             padding: 0.7rem 0.5rem;
@@ -118,14 +142,15 @@
             inset-inline-end: 1.6rem;
             bottom: 1.6rem;
             border-radius: 3rem;
-            background-color: $color-grey-2;
-            box-shadow: 0.2rem 0.2rem 0.5rem var(--shadow-menu);
+            background-color: $color-forest-12;
+            box-shadow: 0.2rem 0.2rem 0.5rem var(--shadow-forest);
             z-index: 4;
         }
 
         &-icon {
             margin: 0.5rem;
             cursor: pointer;
+            color: $color-lime;
         }
     }
 
@@ -133,42 +158,49 @@
         &-dropzone {
             @include desktop-screen {
                 padding-top: 1.6rem;
+                background-color: $color-forest-13;
             }
 
             @include mobile-or-tablet-screen {
                 height: 100%;
                 padding: 1.6rem;
+                background-color: $color-forest-14;
             }
 
             &-area {
                 @include flex-center;
 
                 flex-direction: column;
-                border: dashed 0.2rem var(--border-normal);
+                border: dashed 0.2rem var(--border-forest);
                 border-radius: $BORDER_RADIUS;
                 height: 100%;
                 padding: 1.6rem;
+                background-color: $color-moss-light;
             }
         }
 
         &-icon {
             margin-bottom: 1.6rem;
+            color: $color-emerald;
         }
 
         &-title {
             margin-bottom: 1.6rem;
             font-size: var(--text-size-s);
+            color: $color-lime-dark;
         }
 
         &-description {
             margin-bottom: 1.6rem;
             font-size: var(--text-size-xs);
+            color: $color-lime;
         }
 
         &-preview {
             display: flex;
             flex-direction: column;
             position: relative;
+            background-color: $color-moss;
 
             @include mobile-or-tablet-screen {
                 padding: 1.6rem;
@@ -181,11 +213,12 @@
             &--listed {
                 @include mobile-or-tablet-screen {
                     padding: 0;
+                    background-color: $color-forest-15;
                 }
             }
 
             &-close {
-                background-image: radial-gradient(at right top);
+                background-image: radial-gradient(at right top, $color-emerald, $color-moss);
                 position: absolute;
                 padding: 2.5rem;
                 border-bottom-left-radius: 50%;
@@ -200,7 +233,8 @@
             padding: 1.6rem;
             display: flex;
             justify-content: flex-end;
-            border-top: 1px solid var(--general-section-1);
+            border-top: 1px solid var(--forest-section-1);
+            background-color: $color-forest-16;
         }
     }
 
@@ -208,9 +242,10 @@
         @include flex-center;
 
         flex-direction: column;
+        background-color: $color-moss-light;
 
         @include mobile-or-tablet-screen {
-            border: dashed 0.2rem var(--border-normal);
+            border: dashed 0.2rem var(--border-forest);
             border-radius: $BORDER_RADIUS;
             margin: 1.6rem;
             padding: 1.6rem;
@@ -219,9 +254,11 @@
 
         &-icon {
             margin-bottom: 1.6rem;
+            color: $color-emerald;
 
             &--disabled {
                 opacity: 0.32;
+                color: $color-olive;
             }
         }
 
@@ -230,7 +267,7 @@
             font-size: var(--text-size-s);
             font-weight: bold;
             line-height: 2.4rem;
-            color: var(--text-general);
+            color: $color-lime-dark;
         }
 
         &-terms {
@@ -238,11 +275,12 @@
             line-height: 2rem;
             margin: 1.6rem 0;
             text-align: center;
-            color: var(--text-general);
+            color: $color-lime;
         }
 
         &-text {
             margin-bottom: 1rem;
+            color: $color-lime-dark;
         }
     }
 }
@@ -251,16 +289,19 @@
     max-width: 98%;
     border-radius: 0.8rem;
     max-height: 99%;
+    background-color: $color-moss;
 
     &-content {
         max-width: 98%;
         padding: 1%;
+        background-color: $color-moss-light;
     }
 
     @include mobile-or-tablet-screen {
         height: 100%;
         width: 100%;
         top: 0;
+        background-color: $color-forest-17;
     }
 }
 
@@ -268,10 +309,11 @@
     .link:hover {
         cursor: pointer;
         text-decoration: underline;
+        color: $color-emerald;
     }
 
     .link {
-        color: var(--brand-red-coral);
+        color: $color-emerald;
         font-weight: 700;
         text-decoration: none;
     }
@@ -279,6 +321,7 @@
     @include mobile-or-tablet-screen {
         &__wrapper--preview {
             top: 6.5rem;
+            background-color: $color-forest-18;
 
             .dc-dialog {
                 &__dialog {
@@ -286,35 +329,41 @@
                     min-width: 100vw;
                     min-height: 100vh;
                     padding: 0;
+                    background-color: $color-forest-19;
                 }
 
                 &__header {
                     &-wrapper {
                         margin-bottom: 0;
                         height: 4rem;
-                        box-shadow: inset 0 -0.1rem 0 $color-grey-2;
+                        box-shadow: inset 0 -0.1rem 0 $color-olive;
+                        background-color: $color-moss;
 
                         @include flex-center;
 
                         h1 {
                             width: 100%;
                             text-align: center;
+                            color: $color-lime-dark;
                         }
                     }
 
                     &--close {
                         padding: 1.6rem;
                         margin-top: -1rem;
+                        color: $color-emerald;
                     }
                 }
 
                 &__content {
                     max-width: unset;
+                    background-color: $color-moss-light;
 
                     .injectionDiv {
                         margin: 2.4rem;
                         height: calc(100vh - 26.5rem);
-                        border: 1px solid $color-grey-6;
+                        border: 1px solid $color-olive;
+                        background-color: $color-moss;
                     }
 
                     .load-strategy {
@@ -323,23 +372,27 @@
                                 position: relative;
                                 margin-bottom: 3.2rem;
                                 min-height: 33rem;
+                                background-color: $color-moss-light;
                             }
 
                             &-controls {
                                 inset-inline-end: 3.6rem;
+                                background-color: $color-forest-20;
                             }
                         }
 
                         &__button-group {
-                            box-shadow: inset 0 0.2rem 0 $color-grey-2;
+                            box-shadow: inset 0 0.2rem 0 $color-olive;
                             margin: 0;
                             padding: 1.6rem;
+                            background-color: $color-moss;
                         }
                     }
                 }
 
                 &__footer {
                     display: none;
+                    background-color: $color-forest-21;
                 }
             }
         }
@@ -349,12 +402,14 @@
 .toolbar {
     &__dialog {
         transition: none;
+        background-color: $color-moss;
     }
 }
 
 .flex-align-center {
     display: flex;
     align-items: center;
+    background-color: transparent;
 }
 
 .bot-list {
@@ -362,30 +417,37 @@
         display: flex;
         justify-content: center;
         width: 100%;
+        background-color: $color-moss-light;
 
         @include mobile-screen {
             display: unset;
+            background-color: $color-forest-22;
         }
     }
 
     &__wrapper {
         width: 623px;
+        background-color: $color-moss;
 
         @include tablet-screen {
             width: 600px;
+            background-color: $color-moss-light;
         }
 
         @include mobile-screen {
             width: unset;
+            background-color: $color-forest-23;
         }
     }
 
     &__table {
         height: calc(100vh - 57rem);
         overflow: auto;
+        background-color: $color-moss;
 
         @include mobile-screen {
             height: calc(100vh - 55rem);
+            background-color: $color-moss-light;
         }
     }
 
@@ -393,25 +455,29 @@
         font-size: var(--text-size-s);
         font-weight: 700;
         margin-block-end: 0.8rem;
-        color: var(--text-general);
+        color: $color-lime-dark;
 
         &--listed {
             margin: 0 !important;
+            color: $color-lime;
         }
     }
 
     &__header {
         @extend .flex-align-center;
 
-        border-bottom: 1px solid var(--border-divider);
+        border-bottom: 1px solid $color-olive;
+        background-color: $color-moss-light;
 
         @include mobile-or-tablet-screen {
             padding: 0.8rem 0;
+            background-color: $color-moss;
         }
 
         &__label {
             padding: 0.8rem 1.6rem;
             width: 34%;
+            color: $color-lime-dark;
 
             @include mobile-or-tablet-screen {
                 width: 40%;
@@ -422,6 +488,7 @@
         &__time-stamp {
             width: 20%;
             padding: 0.8rem 1.6rem;
+            color: $color-lime;
 
             @include mobile-or-tablet-screen {
                 width: 25%;
@@ -432,6 +499,7 @@
         &__load-type {
             width: 25%;
             padding: 0.8rem 1.6rem;
+            color: $color-lime-dark;
 
             @include mobile-or-tablet-screen {
                 padding: 0;
@@ -442,13 +510,20 @@
     &__item {
         @extend .flex-align-center;
 
-        border-bottom: 1px solid var(--border-divider);
+        border-bottom: 1px solid $color-olive;
         user-select: none;
         position: relative;
+        background-color: $color-moss;
+        transition: background-color 0.3s ease;
+
+        &:hover {
+            background-color: $color-moss-light;
+        }
 
         &__label {
             padding: 0.8rem 1.6rem;
             width: 35%;
+            color: $color-lime-dark;
 
             .text-wrapper {
                 -webkit-line-clamp: 1;
@@ -469,6 +544,7 @@
         &__time-stamp {
             width: 20%;
             padding: 0.8rem 1.6rem;
+            color: $color-lime;
 
             @include mobile-or-tablet-screen {
                 width: 25%;
@@ -481,6 +557,7 @@
 
             width: 25%;
             padding: 0.8rem 1.6rem;
+            color: $color-lime-dark;
 
             @include mobile-or-tablet-screen {
                 padding: 0;
@@ -488,6 +565,7 @@
 
             svg {
                 margin-inline-end: 0.8rem;
+                color: $color-emerald;
             }
         }
 
@@ -499,6 +577,7 @@
 
             &__action-item {
                 margin-inline-end: 1.6rem;
+                color: $color-emerald;
 
                 &:last-child {
                     margin-inline: 0;
@@ -506,6 +585,7 @@
 
                 &:hover {
                     cursor: pointer;
+                    color: $color-emerald-dark;
                 }
             }
 
@@ -519,15 +599,16 @@
                 border: none;
                 width: unset;
                 padding: 0;
+                color: $color-emerald;
 
                 svg {
-                    fill: var(--text-general);
+                    fill: $color-lime-dark;
                 }
             }
         }
 
         &__responsive {
-            background: var(--general-main-1);
+            background: $color-moss-light;
             box-shadow:
                 0 0 2rem rgb(0 0 0 / 5%),
                 0 1.6rem 2rem rgb(0 0 0 / 5%);
@@ -537,6 +618,7 @@
             inset-inline-end: 3rem;
             top: 4rem;
             z-index: 100;
+            border: 1px solid $color-olive;
 
             &--active {
                 display: block;
@@ -547,10 +629,12 @@
                 display: flex;
                 height: 4rem;
                 padding: 0.8rem 1.1rem;
+                color: $color-lime-dark;
 
                 .dc-icon,
                 &__icon {
                     margin-inline-end: 0.8rem;
+                    color: $color-emerald;
                 }
             }
         }
@@ -558,12 +642,49 @@
         &:nth-last-child(-n + 4) {
             .bot-list__item__responsive {
                 top: -15rem;
+                background-color: $color-moss;
 
                 &--min {
                     top: 1rem;
                     inset-inline-end: 6rem;
+                    background-color: $color-moss-light;
                 }
             }
         }
     }
 }
+
+// New color variables for the green theme
+$color-forest-1: #1a2e22;
+$color-forest-2: #223d2a;
+$color-forest-3: #2a4b32;
+$color-forest-4: #325a3a;
+$color-forest-5: #3a6942;
+$color-forest-6: #42784a;
+$color-forest-7: #4a8752;
+$color-forest-8: #52965a;
+$color-forest-9: #5aa562;
+$color-forest-10: #62b46a;
+$color-forest-11: #6ac372;
+$color-forest-12: #72d27a;
+$color-forest-13: #7ae182;
+$color-forest-14: #82f08a;
+$color-forest-15: #8aff92;
+$color-forest-16: #92ff9a;
+$color-forest-17: #9affa2;
+$color-forest-18: #a2ffaa;
+$color-forest-19: #aaffb2;
+$color-forest-20: #b2ffba;
+$color-forest-21: #baffc2;
+$color-forest-22: #c2ffca;
+$color-forest-23: #caffd2;
+
+$color-moss: #3a5a40;
+$color-moss-light: #4a6a50;
+$color-olive: #6b8e23;
+$color-olive-dark: #5a7e1a;
+$color-emerald: #50c878;
+$color-emerald-dark: #40b868;
+$color-lime: #00ff00;
+$color-lime-light: #b5eaaa;
+$color-lime-dark: #32cd32;
