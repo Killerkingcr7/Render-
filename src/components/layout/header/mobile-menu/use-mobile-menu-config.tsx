@@ -56,7 +56,7 @@ const useMobileMenuConfig = (client?: RootStore['client']) => {
             {
                 as: 'a',
                 href: 'https://dectool2.netlify.app',
-                label: localize('mesoflix.online'),
+                label: localize('analysis tool'),
                 LeftComponent: BrandDerivLogoCoralIcon,
             },
             {
