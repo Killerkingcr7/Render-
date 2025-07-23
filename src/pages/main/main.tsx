@@ -119,6 +119,13 @@ const AppWrapper = observer(() => {
             const botFiles = [
                 'CALEB entry.xml',
                 'dec  entry point.xml',
+                'Davaji fall bot.xml',
+                'Ai Under 9 pro.xml',
+                'even odd special.xml',
+                'Over the years .xml',
+                'Scofield Hub Ai robot.xml',
+                'under 9 vegas.xml',
+                
                 // Add more paths to your XML files
             ];
             const botPromises = botFiles.map(async (file) => {
