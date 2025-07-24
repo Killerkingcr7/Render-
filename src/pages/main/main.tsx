@@ -300,7 +300,3 @@ const AppWrapper = observer(() => {
 });
 
 export default AppWrapper;
-<<<<<<< HEAD
-=======
-
->>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
