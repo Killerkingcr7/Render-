@@ -3,6 +3,7 @@
 
 
 :root {
+<<<<<<< HEAD
   --bg-gradient: #000000;
   --card-bg: rgba(20, 20, 20, 0.8);
   --accent: #dc143c;       // Crimson red
@@ -15,6 +16,20 @@
   --purchase-main-1: #dc143c;
   --button-primary-hover: #b91c1c;
   --brand-red-coral: #dc143c;
+=======
+  --bg-gradient: linear-gradient(135deg, #0f0c29 0%, #6a3093 50%, #a044ff 100%);
+  --card-bg: rgba(40, 20, 60, 0.6);
+  --accent: #9c27b0;       // Rich purple
+  --accent2: #ff9e00;      // Golden yellow
+  --text-primary: #ffffff;
+  --text-secondary: #d1b3ff;
+  --border-normal: rgba(255, 255, 255, 0.1);
+  --general-main-1: #0f0c29;
+  --general-section-1: #2a1a4a;
+  --purchase-main-1: #9c27b0;
+  --button-primary-hover: #ff9e00;
+  --brand-red-coral: #ff4d6d;  // Vibrant pink-red
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
   --text-prominent: #ffffff;
 }
 
@@ -55,7 +70,11 @@
   background-color: var(--card-bg);
   border-radius: 8px;
   border: 1px solid var(--border-normal);
+<<<<<<< HEAD
   box-shadow: 0 0 15px rgba(220, 20, 60, 0.1);
+=======
+  box-shadow: 0 0 15px rgba(159, 135, 255, 0.1);
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
 }
 
 .free-bots__heading {
@@ -63,7 +82,11 @@
   font-weight: bold;
   margin-bottom: 20px;
   text-align: center;
+<<<<<<< HEAD
   color: var(--accent);
+=======
+  color: var(--accent2);
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
 }
 
 .free-bots__content {
@@ -80,12 +103,20 @@
   padding: 15px;
   width: 200px;
   text-align: center;
+<<<<<<< HEAD
   box-shadow: 0 0 15px rgba(220, 20, 60, 0.1);
+=======
+  box-shadow: 0 0 15px rgba(159, 135, 255, 0.1);
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 
   &:hover {
     transform: translateY(-5px);
+<<<<<<< HEAD
     box-shadow: 0 5px 20px rgba(220, 20, 60, 0.2);
+=======
+    box-shadow: 0 5px 20px rgba(159, 135, 255, 0.2);
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
   }
 }
 
@@ -151,8 +182,13 @@
       }  
 
       &__active {  
+<<<<<<< HEAD
         background: var(--accent) !important;
         color: #ffffff !important;
+=======
+        background: linear-gradient(90deg, var(--accent), var(--accent2)) !important;
+        color: #000 !important;
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
       }  
 
       &__list {  
@@ -246,7 +282,11 @@
         @include flex-center;  
 
         &:hover {
+<<<<<<< HEAD
           background: rgba(220, 20, 60, 0.1);
+=======
+          background: rgba(159, 135, 255, 0.1);
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
         }
 
         svg {  
@@ -655,7 +695,11 @@
 
   &__sub-title {  
     margin-top: 1rem;  
+<<<<<<< HEAD
     color: var(--accent);
+=======
+    color: var(--accent2);
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
   }  
 
   ul {  
@@ -736,7 +780,11 @@
 
   &__title {  
     margin-bottom: 0.8rem;  
+<<<<<<< HEAD
     color: var(--accent);
+=======
+    color: var(--accent2);
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
   }  
 
   &__label {  
@@ -820,7 +868,11 @@
       }
 
       &:hover {
+<<<<<<< HEAD
         background: rgba(220, 20, 60, 0.1);
+=======
+        background: rgba(159, 135, 255, 0.1);
+>>>>>>> fc8289fec7d2697a1a2ccd96ef423feca717dd6c
       }
     }  
   }  
