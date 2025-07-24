@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deriv Last Digit Analysis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --danger: #f72585;
+      --gray: #6c757d;
+      --white: #ffffff;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --border-color: #e2e8f0;
+      --dark-bg-color: #0f172a;
+      --dark-card-bg: #1e293b;
+      --dark-text-color: #f8fafc;
+      --dark-border-color: #334155;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: var(--dark-bg-color);
+      --card-bg: var(--dark-card-bg);
+      --text-color: var(--dark-text-color);
+      --border-color: var(--dark-border-color);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 15px;
+      flex: 1;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      color: var(--text-color);
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    h3 {
+      font-size: 1.2rem;
+      color: var(--gray);
+      margin-bottom: 10px;
+    }
+
+    .last-tick-container {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 15px 0;
+      padding: 10px 16px;
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      display: inline-block;
+      width: 100%;
+    }
+
+    .last-tick-container span {
+      color: var(--primary);
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-color);
+      margin-bottom: 6px;
+    }
+
+    select,
+    input {
+      width: 100%;
+      max-width: 280px;
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      margin: 6px 0 15px;
+      border-radius: 8px;
+      border: 2px solid var(--border-color);
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      transition: border-color 0.2s ease;
+    }
+
+    select:focus,
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    button {
+      cursor: pointer;
+      background-color: var(--primary);
+      color: var(--white);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      margin: 8px 0;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      background-color: var(--gray);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+
+
+    .controls-container {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 20px;
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 200px;
+      flex: 1;
+    }
+
+    .form-group select,
+    .form-group input {
+      margin: 6px 0 0;
+      max-width: none;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+    }
+
+    .circle-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+      padding: 15px;
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--white);
+      background-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
+    }
+
+    .circle.glow {
+      animation: pulse 1.5s infinite;
+      transform: scale(1.05);
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.7);
+      }
+
+      70% {
+        box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+      }
+    }
+
+    .digit-info {
+      font-size: 0.8rem;
+      margin-top: 6px;
+      color: var(--text-color);
+      font-weight: 500;
+    }
+
+    .digit-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .history-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    .history-item {
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background-color: var(--card-bg);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      color: var(--primary);
+      transition: all 0.2s ease;
+    }
+
+    .history-item:hover {
+      background-color: var(--primary);
+      color: var(--white);
+      transform: translateY(-2px);
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .stats-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .stats-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bar-container {
+      height: 16px;
+      width: 100%;
+      background-color: var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: var(--white);
+      transition: width 0.6s ease;
+    }
+
+    .even-bar {
+      background-color: var(--success);
+    }
+
+    .odd-bar {
+      background-color: var(--danger);
+    }
+
+    .rise-bar {
+      background-color: var(--success);
+    }
+
+    .fall-bar {
+      background-color: var(--danger);
+    }
+
+    .bar-value {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-color);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .navbar {
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 15px 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .navbar a {
+      color: var(--text-color);
+      text-align: center;
+      padding: 12px 16px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+      position: relative;
+    }
+
+    .navbar a:hover,
+    .navbar a.active {
+      color: var(--primary);
+    }
+
+    .navbar a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      background-color: var(--primary);
+      transition: width 0.2s ease;
+    }
+
+    .navbar a:hover::after,
+    .navbar a.active::after {
+      width: 70%;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+      transition: transform 0.2s ease;
+      border: none;
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.05);
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 15px 0;
+    }
+
+    .loading-spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba(67, 97, 238, 0.2);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    footer {
+      text-align: center;
+      padding: 15px;
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      margin-top: auto;
+      box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Enhanced Mobile Optimizations */
+    @media (max-width: 768px) {
+      body {
+        padding: 8px;
+      }
+
+      .container {
+        padding: 8px;
+      }
+
+      header {
+        margin-bottom: 12px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+        margin-bottom: 8px;
+      }
+
+      .controls-container,
+      .circle-container,
+      .history-container,
+      .stats-container {
+        margin: 12px 0;
+        padding: 12px;
+      }
+
+      .circle {
+        width: 48px;
+        height: 48px;
+        font-size: 1rem;
+        margin: 2px;
+      }
+
+      .circle-container {
+        gap: 8px;
+        padding: 10px;
+        justify-content: space-around;
+      }
+
+      .digit-info {
+        font-size: 0.65rem;
+        margin-top: 3px;
+        line-height: 1.2;
+      }
+
+      .history-item {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+        margin: 2px;
+      }
+
+      .stats-container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .navbar a {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+      }
+
+      .last-tick-container {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+        margin: 10px 0;
+      }
+
+      select,
+      input {
+        max-width: 100%;
+        font-size: 0.85rem;
+        padding: 8px 10px;
+        margin: 4px 0 10px;
+      }
+
+      button {
+        font-size: 0.85rem;
+        padding: 8px 16px;
+        width: 100%;
+        max-width: 200px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 6px;
+      }
+
+      .container {
+        padding: 0;
+      }
+
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      h2 {
+        font-size: 1.1rem;
+        margin-bottom: 6px;
+      }
+
+      .circle {
+        width: 42px;
+        height: 42px;
+        font-size: 0.9rem;
+        margin: 1px;
+      }
+
+      .circle-container {
+        gap: 6px;
+        padding: 8px;
+        margin: 8px 0;
+      }
+
+      .controls-container {
+        padding: 12px;
+        margin: 8px 0;
+      }
+
+      .digit-info {
+        font-size: 0.6rem;
+        margin-top: 2px;
+      }
+
+      .history-item {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        margin: 1px;
+      }
+
+      .stats-card {
+        padding: 12px;
+      }
+
+      .stats-title {
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+      }
+
+      .bar-value {
+        font-size: 0.7rem;
+      }
+
+      .navbar a {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+      }
+
+      .theme-toggle {
+        width: 40px;
+        height: 40px;
+        bottom: 15px;
+        right: 15px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .circle {
+        width: 38px;
+        height: 38px;
+        font-size: 0.8rem;
+      }
+
+      .circle-container {
+        gap: 4px;
+        padding: 6px;
+      }
+
+      .digit-info {
+        font-size: 0.55rem;
+      }
+
+      .history-item {
+        font-size: 0.7rem;
+        padding: 3px 6px;
+      }
+    }
+
+    /* Touch-friendly improvements */
+    @media (hover: none) and (pointer: coarse) {
+
+      button,
+      select,
+      input {
+        min-height: 44px;
+      }
+
+      .navbar a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .circle {
+        cursor: default;
+      }
+
+      .history-item {
+        cursor: default;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Deriv Last Digit Analysis</h1>
+      <h3>Advanced Market Probability Tool</h3>
+
+      <div class="navbar">
+        <a href="History.html" id="historicalLink">
+          <i class="fas fa-chart-line"></i> Historical Analysis
+        </a>
+        <a href="index.html" class="active" id="newAnalysisLink">
+          <i class="fas fa-bolt"></i> Real-time Analysis
+        </a>
+      </div>
+    </header>
+
+    <div class="controls-container">
+      <!-- Last Tick Display -->
+      <div id="lastTick" class="last-tick-container">
+        <i class="fas fa-sync-alt"></i> Last Tick: <span id="lastTickValue">N/A</span>
+      </div>
+
+      <div class="controls-row">
+        <!-- Controls -->
+        <div class="form-group">
+          <label for="market"><i class="fas fa-chart-pie"></i> Select Market:</label>
+          <select id="market">
+            <option value="R_10">Volatility 10 Index</option>
+            <option value="R_25">Volatility 25 Index</option>
+            <option value="R_50">Volatility 50 Index</option>
+            <option value="R_75">Volatility 75 Index</option>
+            <option value="R_100">Volatility 100 Index</option>
+            <option value="1HZ10V">Volatility 10 (1s)</option>
+            <option value="1HZ25V">Volatility 25 (1s)</option>
+            <option value="1HZ50V">Volatility 50 (1s)</option>
+            <option value="1HZ75V">Volatility 75 (1s)</option>
+            <option value="1HZ100V">Volatility 100 (1s)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="tickCount"><i class="fas fa-sliders-h"></i> Number of Ticks to Analyze:</label>
+          <input type="number" id="tickCount" value="100" min="10" max="1000">
+        </div>
+
+        <div class="button-group">
+          <button onclick="connectWebSocket()" id="connectBtn">
+            <i class="fas fa-play"></i> Start Analysis
+          </button>
+        </div>
+      </div>
+
+      <div class="loading" id="loadingIndicator">
+        <div class="loading-spinner"></div>
+        <p>Connecting to market data...</p>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-container">
+      <div class="stats-card">
+        <div class="stats-title">
+          <i class="fas fa-balance-scale"></i> Even/Odd Distribution
+        </div>
+        <div class="bar-container">
+          <div class="bar even-bar" id="evenBar" style="width: 0%"></div>
+        </div>
+        <div class="bar-value">
+          <span>Even: <span id="evenPercent">0%</span></span>
+          <span>Odd: <span id="oddPercent">0%</span></span>
+        </div>
+      </div>
+
+      <div class="stats-card">
+        <div class="stats-title">
+          <i class="fas fa-chart-line"></i> Rise/Fall Trend
+        </div>
+        <div class="bar-container">
+          <div class="bar rise-bar" id="riseBar" style="width: 0%"></div>
+        </div>
+        <div class="bar-value">
+          <span>Rise: <span id="risePercent">0%</span></span>
+          <span>Fall: <span id="fallPercent">0%</span></span>
+        </div>
+      </div>
+
+      <div class="stats-card">
+        <div class="stats-title">
+          <i class="fas fa-info-circle"></i> Market Info
+        </div>
+        <div class="bar-value">
+          <span>Total Ticks: <span id="totalTicks">0</span></span>
+        </div>
+        <div class="bar-value">
+          <span>Current Market: <span id="currentMarket">N/A</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Digit Circles -->
+    <h2>Digit Frequency Distribution</h2>
+    <div class="circle-container" id="circleContainer"></div>
+
+    <!-- History -->
+    <h2>Recent Tick History</h2>
+    <div class="history-container" id="historyContainer"></div>
+  </div>
+
+  <button class="theme-toggle" id="themeToggle">
+    <i class="fas fa-moon"></i>
+  </button>
+
+  <footer>
+    <p>&copy; 2025 Deriv Analysis Tool. All rights reserved.</p>
+  </footer>
+  <script src="index.js"></script>
+</body>
+
+</html>
