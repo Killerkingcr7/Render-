@@ -117,14 +117,11 @@ const AppWrapper = observer(() => {
         // Fetch the XML files and parse them
         const fetchBots = async () => {
             const botFiles = [
-                'CALEB entry.xml',
+                'under 8 entry.xml',
                 'dec  entry point.xml',
-                'Davaji fall bot.xml',
-                'Ai Under 9 pro.xml',
-                'even odd special.xml',
-                'Over the years .xml',
+               'Over the years .xml',
                 'Scofield Hub Ai robot.xml',
-                'under 9 vegas.xml',
+                'Thunder ⚡.xml',
 
                 // Add more paths to your XML files
             ];
