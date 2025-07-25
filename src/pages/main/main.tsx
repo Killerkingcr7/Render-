@@ -299,4 +299,5 @@ const AppWrapper = observer(() => {
     );
 });
 
-export default AppWrapper;
+const Main = AppWrapper;
+export default Main;
