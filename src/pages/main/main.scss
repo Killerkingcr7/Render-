@@ -136,6 +136,7 @@
       &__active {
         background: var(--accent);
         color: var(--text-primary);
+        box-shadow: 0 0 10px var(--glow-red); // Added glow for active state
       }
 
       &__list {
@@ -227,7 +228,7 @@
         @include flex-center;
 
         &:hover {
-          background: rgba(211, 47, 47, 0.1);
+          background: rgba(239, 83, 80, 0.1); // Using --accent2 for hover
           box-shadow: 0 0 10px var(--glow-red);
         }
 
@@ -852,4 +853,4 @@
   justify-content: center;
   background: rgba(211, 47, 47, 0.1);
   box-shadow: 0 0 10px var(--glow-red);
-} 
+}
