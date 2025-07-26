@@ -14,7 +14,9 @@ let DOM = {};
 function toggleTheme() {
   isDarkMode = !isDarkMode;
   document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-  DOM.themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  if (DOM.themeToggle) {
+    DOM.themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  }
   localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
 }
 
@@ -48,9 +50,13 @@ async function fetchHistoricalTicks(market, count) {
 }
 
 async function connectWebSocket() {
-  // Prevent multiple simultaneous connections
   if (isConnecting) return;
   isConnecting = true;
+
+  if (!DOM.market || !DOM.tickCount) {
+    isConnecting = false;
+    return;
+  }
 
   const market = DOM.market.value;
   const tickLimit = parseInt(DOM.tickCount.value);
@@ -58,16 +64,15 @@ async function connectWebSocket() {
   localStorage.setItem('tickCount', tickLimit);
 
   try {
-    // Close existing connection
     if (ws) {
-      ws.onclose = null; // Remove event handler to prevent unwanted triggers
+      ws.onclose = null;
       ws.close();
     }
 
     tickHistory = [];
     const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
     tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
-    updateDisplay(); // Clear current tick indicator
+    updateDisplay();
 
     ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
 
@@ -85,12 +90,7 @@ async function connectWebSocket() {
       if (data.tick) processTick(data.tick);
     };
 
-    ws.onclose = () => {
-      isConnecting = false;
-      console.log('WebSocket connection closed');
-    };
-
-    ws.onerror = () => {
+    ws.oncloor = () => {
       isConnecting = false;
       showError('WebSocket error');
     };
@@ -261,18 +261,28 @@ function initializeDOM() {
     themeToggle: document.getElementById('theme-toggle')
   };
 
-  // Check for missing elements
-  const missingElements = [];
-  for (const [key, element] of Object.entries(DOM)) {
-    if (!element) {
-      missingElements.push(key);
+  // Check for critical missing elements (only the ones that must exist)
+  const criticalElements = ['market', 'tickCount', 'circleContainer', 'themeToggle', 'seeMoreBtn'];
+  const missingCritical = [];
+
+  for (const key of criticalElements) {
+    if (!DOM[key]) {
+      missingCritical.push(key);
+      console.error(`Critical element missing: ${key} (looking for id="${key === 'tickCount' ? 'ticks' : key}")`);
     }
   }
 
-  if (missingElements.length > 0) {
-    console.error('Missing DOM elements:', missingElements);
-    showError(`Missing elements: ${missingElements.join(', ')}`);
+  if (missingCritical.length > 0) {
+    console.error('Missing critical DOM elements:', missingCritical);
+    showError(`Missing critical elements: ${missingCritical.join(', ')}`);
     return false;
+  }
+
+  // Log missing optional elements for debugging
+  const optionalElements = Object.keys(DOM).filter(key => !criticalElements.includes(key));
+  const missingOptional = optionalElements.filter(key => !DOM[key]);
+  if (missingOptional.length > 0) {
+    console.warn('Missing optional DOM elements:', missingOptional);
   }
 
   return true;
@@ -285,9 +295,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return; // Exit if DOM elements are missing
   }
 
-  // Add event listeners
-  DOM.themeToggle.addEventListener('click', toggleTheme);
-  DOM.seeMoreBtn.addEventListener('click', toggleHistory);
+  // Add event listeners with null checks
+  if (DOM.themeToggle) {
+    DOM.themeToggle.addEventListener('click', toggleTheme);
+  }
+
+  if (DOM.seeMoreBtn) {
+    DOM.seeMoreBtn.addEventListener('click', toggleHistory);
+  }
 
   // Load saved settings BEFORE adding event listeners to avoid triggering them
   const savedMarket = localStorage.getItem('market');
@@ -298,17 +313,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
 
   // Auto-start analysis when market or tick count changes
-  DOM.market.addEventListener('change', () => {
-    connectWebSocket();
-  });
-
-  DOM.tickCount.addEventListener('input', () => {
-    // Debounce the input to avoid too many requests
-    clearTimeout(window.tickCountTimeout);
-    window.tickCountTimeout = setTimeout(() => {
+  if (DOM.market) {
+    DOM.market.addEventListener('change', () => {
       connectWebSocket();
-    }, 500);
-  });
+    });
+  }
+
+  if (DOM.tickCount) {
+    DOM.tickCount.addEventListener('input', () => {
+      // Debounce the input to avoid too many requests
+      clearTimeout(window.tickCountTimeout);
+      window.tickCountTimeout = setTimeout(() => {
+        connectWebSocket();
+      }, 500);
+    });
+  }
 
   // Auto-start on page load
   connectWebSocket();
