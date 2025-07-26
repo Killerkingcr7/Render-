@@ -10,6 +10,7 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 let DOM = {};
 
 function showError(message) {
+  console.error('Error:', message); // Log to console for debugging
   const error = document.createElement('div');
   error.className = 'error-message';
   error.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
@@ -29,6 +30,7 @@ async function fetchHistoricalTicks(market, count) {
     const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
     
     wsHistory.onopen = () => {
+      console.log('Historical WebSocket opened');
       wsHistory.send(JSON.stringify({ authorize: API_TOKEN }));
       wsHistory.send(JSON.stringify({ ticks_history: market, count, end: 'latest', style: 'ticks' }));
     };
@@ -36,22 +38,26 @@ async function fetchHistoricalTicks(market, count) {
     wsHistory.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.error) {
-        showError(data.error.message);
+        console.error('Historical WebSocket error:', data.error);
+        showError(`Historical data error: ${data.error.message}`);
         reject(data.error.message);
       }
       if (data.history?.prices) {
+        console.log('Historical ticks received:', data.history.prices);
         resolve(data.history.prices);
         wsHistory.close();
       }
     };
     
-    wsHistory.onerror = () => {
+    wsHistory.onerror = (error) => {
+      console.error('Historical WebSocket error:', error);
       showError('Failed to fetch historical data');
       reject('WebSocket error');
     };
     
-    wsHistory.onclose = () => {
-      if (!data?.history?.prices) reject('WebSocket closed unexpectedly');
+    wsHistory.onclose = (event) => {
+      console.log('Historical WebSocket closed:', event);
+      if (!event.wasClean) reject('Historical WebSocket closed unexpectedly');
     };
   });
 }
@@ -59,29 +65,38 @@ async function fetchHistoricalTicks(market, count) {
 async function connectWebSocket() {
   if (!DOM.market || !DOM.tickCount) {
     showError('Market or tick count input missing');
+    console.error('Missing DOM elements:', { market: !!DOM.market, tickCount: !!DOM.tickCount });
     return;
   }
 
-  const market = DOM.market.value;
+  const market = DOM.market.value || 'R_100'; // Fallback to default market
   const tickLimit = parseInt(DOM.tickCount.value) || 100;
   localStorage.setItem('market', market);
   localStorage.setItem('tickCount', tickLimit);
 
   try {
-    // Load historical data
+    // Load historical data (non-blocking)
     try {
       const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
       tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
+      console.log('Historical ticks processed:', tickHistory);
       updateDisplay();
     } catch (error) {
-      showError('Failed to load historical data. Continuing with real-time updates.');
+      console.warn('Historical data fetch failed, continuing with real-time:', error);
+      showError('Failed to load historical data. Using real-time updates.');
+      tickHistory = []; // Reset to avoid stale data
+      updateDisplay();
     }
 
     // Connect real-time updates
-    if (ws) ws.close();
+    if (ws) {
+      console.log('Closing existing WebSocket');
+      ws.close();
+    }
     ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
 
     ws.onopen = () => {
+      console.log('Real-time WebSocket opened');
       reconnectAttempts = 0;
       ws.send(JSON.stringify({ authorize: API_TOKEN }));
       ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
@@ -89,29 +104,41 @@ async function connectWebSocket() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.error) showError(data.error.message);
-      if (data.tick) processTick(data.tick);
+      if (data.error) {
+        console.error('Real-time WebSocket error:', data.error);
+        showError(`WebSocket error: ${data.error.message}`);
+      }
+      if (data.tick) {
+        console.log('Tick received:', data.tick);
+        processTick(data.tick);
+      }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
+      console.log('Real-time WebSocket closed:', event);
       if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
+        console.log(`Reconnecting attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
         setTimeout(connectWebSocket, 2000 * reconnectAttempts);
       } else {
         showError('WebSocket connection lost');
       }
     };
 
-    ws.onerror = () => showError('WebSocket error');
+    ws.onerror = (error) => {
+      console.error('Real-time WebSocket error:', error);
+      showError('WebSocket connection error');
+    };
   } catch (error) {
+    console.error('Connection error:', error);
     showError('Connection failed');
   }
 }
 
 function processTick(tick) {
-  const market = DOM.market.value;
+  const market = DOM.market.value || 'R_100';
   const priceStr = formatPrice(tick.quote, getVolatility(market));
-  const lastDigit = parseInt(priceStr.slice(-1));
+  const lastDigit = parseInt(priceStr.slice(-1)) || 0;
 
   DOM.lastTickValue.textContent = priceStr;
   DOM.lastTickTime.textContent = new Date().toLocaleTimeString();
@@ -160,20 +187,17 @@ function updateDisplay(lastDigit = null) {
   for (let i = 0; i <= 9; i++) {
     const percent = total ? (counts[i] / total * 100).toFixed(1) : 0;
     const wrapper = document.createElement('div');
-    wrappers.className = 'circle-wrapper';
+    wrapper.className = 'circle-wrapper';
     const circle = document.createElement('div');
     circle.className = `circle ${i === lastDigit ? 'current-tick' : ''} ${
       counts[i] === maxCount && total ? 'most-frequent' : ''
     } ${counts[i] === minCount && total ? 'least-frequent' : ''}`;
     circle.textContent = i;
-    
     const stats = document.createElement('div');
     stats.className = 'stats';
-    stats.innerText = `${percent}%`;
-    
+    stats.textContent = `${percent}%`;
     wrapper.appendChild(circle);
     wrapper.appendChild(stats);
-    
     DOM.circleContainer.appendChild(wrapper);
   }
 
@@ -243,6 +267,7 @@ function initializeDOM() {
 
   if (missingElements.length > 0) {
     showError(`Missing DOM elements: ${missingElements.join(', ')}`);
+    console.error('Missing DOM elements:', missingElements);
     return false;
   }
 
@@ -250,7 +275,11 @@ function initializeDOM() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!initializeDOM()) return;
+  console.log('DOMContentLoaded fired');
+  if (!initializeDOM()) {
+    console.error('DOM initialization failed');
+    return;
+  }
 
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
   DOM.themeToggle.addEventListener('click', toggleTheme);
@@ -258,12 +287,16 @@ document.addEventListener('DOMContentLoaded', () => {
     isHistoryExpanded = !isHistoryExpanded;
     updateHistory();
   });
-  DOM.market.addEventListener('change', connectWebSocket);
+  DOM.market.addEventListener('change', () => {
+    console.log('Market changed to:', DOM.market.value);
+    connectWebSocket();
+  });
 
-  const savedMarket = localStorage.getItem('market');
-  const savedTickCount = localStorage.getItem('tickCount');
-  if (savedMarket) DOM.market.value = savedMarket;
-  if (savedTickCount) DOM.tickCount.value = savedTickCount;
+  const savedMarket = localStorage.getItem('market') || 'R_100';
+  const savedTickCount = localStorage.getItem('tickCount') || '100';
+  DOM.market.value = savedMarket;
+  DOM.tickCount.value = savedTickCount;
+  console.log('Initial settings:', { market: savedMarket, tickCount: savedTickCount });
 
   connectWebSocket();
-}); 
+});
