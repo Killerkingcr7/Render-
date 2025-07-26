@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -82,7 +83,8 @@
       min-width: 150px;
     }
 
-    select, input {
+    select,
+    input {
       width: 100%;
       padding: 8px;
       border-radius: 6px;
@@ -92,7 +94,8 @@
       font-size: 0.9rem;
     }
 
-    select:focus, input:focus {
+    select:focus,
+    input:focus {
       outline: none;
       border-color: var(--primary);
     }
@@ -176,6 +179,54 @@
       width: 70%;
     }
 
+    .stats-container {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .stats-card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .bar-container {
+      height: 12px;
+      background-color: var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.6s ease;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .even-bar {
+      background-color: blue
+    }
+
+    .odd-bar {
+      background-color: rgb(225, 25, 25)
+    }
+
+    .rise-bar {
+      background-color: #00cc66;
+    }
+
+    .fall-bar {
+      background-color: #1e71cf;
+    }
+
     .circle-container {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -250,58 +301,37 @@
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
-      70% { box-shadow: 0 0 0 8px rgba(255, 215, 0, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+      }
+
+      70% {
+        box-shadow: 0 0 0 8px rgba(255, 215, 0, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+      }
     }
 
     @keyframes glow {
-      0% { box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); }
-      50% { box-shadow: 0 0 15px rgba(0, 255, 127, 0.5); }
-      100% { box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); }
+      0% {
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 15px rgba(0, 255, 127, 0.5);
+      }
+
+      100% {
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      }
     }
 
     .circle-wrapper .stats {
       font-size: 0.7rem;
       color: var(--text-color);
     }
-
-    .stats-container {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-      margin: 10px 0;
-    }
-
-    .stats-card {
-      background-color: var(--card-bg);
-      border-radius: 8px;
-      padding: 10px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .bar-container {
-      height: 12px;
-      background-color: var(--border-color);
-      border-radius: 6px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .bar {
-      height: 100%;
-      border-radius: 6px;
-      transition: width 0.6s ease;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    .even-bar { background-color: var(--primary); }
-    .odd-bar { background-color: var(--primary-dark); }
-    .rise-bar { background-color: #00cc66; }
-    .fall-bar { background-color: #ff4d4d; }
 
     .history-container {
       grid-column: 1 / -1;
@@ -338,49 +368,6 @@
       background-color: var(--primary-dark);
     }
 
-    .navbar {
-      background-color: var(--card-bg);
-      border-radius: 10px;
-      overflow: hidden;
-      margin: 15px 0;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .navbar a {
-      color: var(--text-color);
-      text-align: center;
-      padding: 12px 16px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.2s ease;
-      position: relative;
-    }
-
-    .navbar a:hover,
-    .navbar a.active {
-      color: var(--primary);
-    }
-
-    .navbar a::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 2px;
-      background-color: var(--primary);
-      transition: width 0.2s ease;
-    }
-
-    .navbar a:hover::after,
-    .navbar a.active::after {
-      width: 70%;
-    }
-
     .theme-toggle {
       position: fixed;
       bottom: 15px;
@@ -410,8 +397,13 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
     footer {
@@ -428,17 +420,48 @@
         grid-template-columns: 1fr;
         padding: 8px;
       }
-      .circle { width: 40px; height: 40px; font-size: 0.9rem; }
-      .circle-wrapper .stats { font-size: 0.65rem; }
-      .circle-container { grid-template-columns: repeat(5, 1fr); }
-      button, select, input { min-height: 40px; font-size: 0.85rem; }
+
+      .circle {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+      }
+
+      .circle-wrapper .stats {
+        font-size: 0.65rem;
+      }
+
+      .circle-container {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      button,
+      select,
+      input {
+        min-height: 40px;
+        font-size: 0.85rem;
+      }
     }
 
     @media (max-width: 480px) {
-      h1 { font-size: 1.3rem; }
-      .circle { width: 35px; height: 35px; font-size: 0.8rem; }
-      .circle-container { grid-template-columns: repeat(5, 1fr); gap: 6px; }
-      .stats-container { width: auto; }
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      .circle {
+        width: 35px;
+        height: 35px;
+        font-size: 0.8rem;
+      }
+
+      .circle-container {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+      }
+
+      .stats-container {
+        width: auto;
+      }
     }
   </style>
 </head>
@@ -446,15 +469,15 @@
 <body>
   <div class="container">
     <header>
-      <h1>Deriv Last Digit Analysis - Real-time</h1>
+      <h1>Deriv Last Digit Analysis - Historical</h1>
       <div class="last-tick-container">
         Last Tick: <span id="last-tick-value">N/A</span> (<span id="last-tick-time"></span>)
       </div>
       <div class="navbar">
-        <a href="History.html" id="historicalLink">
+        <a href="History.html" class="active" id="historicalLink">
           <i class="fas fa-chart-line"></i> Historical Analysis
         </a>
-        <a href="index.html" class="active" id="newAnalysisLink">
+        <a href="index.html" id="newAnalysisLink">
           <i class="fas fa-bolt"></i> Real-time Analysis
         </a>
       </div>
@@ -480,11 +503,7 @@
         <label for="ticks">Ticks to analyze:</label>
         <input type="number" id="ticks" value="100" min="10" max="1000" aria-label="Number of ticks">
       </div>
-      <div class="form-group">
-        <button id="connect-btn"><i class="fa fa-play"></i> Start</button>
-        <button id="pause-btn" disabled><i class="fa fa-pause"></i> Pause</button>
-        <button id="reset-btn"><i class="fas fa-undo"></i> Reset</button>
-      </div>
+
     </div>
 
     <div id="circle-container" class="circle-container"></div>
@@ -525,7 +544,8 @@
   <footer>
     <p>© 2025 Deriv Analysis Tool</p>
   </footer>
-  <script src="index.js"></script>
+
+  <script src="history.js"></script>
 </body>
 
 </html>
