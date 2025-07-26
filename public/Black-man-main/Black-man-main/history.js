@@ -1,15 +1,20 @@
+```javascript
 const API_TOKEN = "n6rqpKj9hrdfbiM";
 const APP_ID = "70549";
 let tickHistory = [];
 let ws;
 let isDarkMode = false;
-let isHistoryExpanded = false;
+let isPaused = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 3;
+let isHistoryExpanded = false;
 
 const DOM = {
   market: document.getElementById('market'),
   tickCount: document.getElementById('ticks'),
+  connectBtn: document.getElementById('connect-btn'),
+  pauseBtn: document.getElementById('pause-btn'),
+  resetBtn: document.getElementById('reset-btn'),
   lastTickValue: document.getElementById('last-tick-value'),
   lastTickTime: document.getElementById('last-tick-time'),
   totalTicks: document.getElementById('total-ticks'),
@@ -28,14 +33,8 @@ const DOM = {
   themeToggle: document.getElementById('theme-toggle')
 };
 
-function toggleTheme() {
-  isDarkMode = !isDarkMode;
-  document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-  DOM.themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-  localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-}
-
 function showError(message) {
+  console.error('Error:', message);
   const error = document.createElement('div');
   error.className = 'error-message';
   error.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
@@ -43,30 +42,45 @@ function showError(message) {
   setTimeout(() => error.remove(), 5000);
 }
 
+function toggleTheme() {
+  isDarkMode = !isDarkMode;
+  document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+  DOM.themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+}
+
 async function fetchHistoricalTicks(market, count) {
-  const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
   return new Promise((resolve, reject) => {
-    wsHistory.onopen = () => wsHistory.send(JSON.stringify({ ticks_history: market, count, end: 'latest', style: 'ticks' }));
+    const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
+    wsHistory.onopen = () => {
+      console.log('Historical WebSocket opened');
+      wsHistory.send(JSON.stringify({ ticks_history: market, count, end: 'latest', style: 'ticks' }));
+    };
     wsHistory.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.error) {
-        showError(data.error.message);
+        console.error('Historical error:', data.error);
+        showError(`Historical data error: ${data.error.message}`);
         reject(data.error.message);
       } else if (data.history?.prices) {
+        console.log('Historical ticks received:', data.history.prices.length);
         resolve(data.history.prices);
       }
       wsHistory.close();
     };
-    wsHistory.onerror = () => {
+    wsHistory.onerror = (error) => {
+      console.error('Historical WebSocket error:', error);
       showError('Failed to fetch historical data');
-      reject();
+      reject('WebSocket error');
     };
+    wsHistory.onclose = (event) => console.log('Historical WebSocket closed:', event);
   });
 }
 
-async function startAnalysis() {
+async function connectWebSocket() {
   if (!DOM.market || !DOM.tickCount) {
     showError('Market or tick count input missing');
+    console.error('Missing DOM elements:', { market: !!DOM.market, tickCount: !!DOM.tickCount });
     return;
   }
 
@@ -74,6 +88,10 @@ async function startAnalysis() {
   const tickLimit = parseInt(DOM.tickCount.value) || 100;
   localStorage.setItem('market', market);
   localStorage.setItem('tickCount', tickLimit);
+  console.log('Starting analysis:', { market, tickLimit });
+
+  DOM.connectBtn.disabled = true;
+  DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
 
   try {
     // Load historical data
@@ -81,40 +99,86 @@ async function startAnalysis() {
       tickHistory = [];
       const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
       tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
+      console.log('Historical ticks processed:', tickHistory.length);
       updateDisplay();
     } catch (error) {
+      console.warn('Historical data failed:', error);
       showError('Failed to load historical data. Using real-time updates.');
     }
 
     // Connect real-time updates
-    if (ws) ws.close();
+    if (ws) {
+      console.log('Closing existing WebSocket');
+      ws.close();
+    }
     ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
 
     ws.onopen = () => {
+      console.log('Real-time WebSocket opened');
       reconnectAttempts = 0;
+      DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+      DOM.connectBtn.disabled = false;
+      DOM.pauseBtn.disabled = false;
       ws.send(JSON.stringify({ authorize: API_TOKEN }));
       ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
     };
 
     ws.onmessage = (event) => {
+      if (isPaused) return;
       const data = JSON.parse(event.data);
-      if (data.error) showError(data.error.message);
-      if (data.tick) processTick(data.tick);
-    };
-
-    ws.onclose = () => {
-      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-        reconnectAttempts++;
-        setTimeout(startAnalysis, 2000 * reconnectAttempts);
-      } else {
-        showError('WebSocket connection lost');
+      if (data.error) {
+        console.error('Real-time error:', data.error);
+        showError(`WebSocket error: ${data.error.message}`);
+      }
+      if (data.tick) {
+        console.log('Tick received:', data.tick.quote);
+        processTick(data.tick);
       }
     };
 
-    ws.onerror = () => showError('WebSocket error');
+    ws.onclose = (event) => {
+      console.log('Real-time WebSocket closed:', event);
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        console.log(`Reconnecting attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+        setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+      } else {
+        showError('WebSocket connection lost');
+        resetUI();
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('Real-time WebSocket error:', error);
+      showError('WebSocket error');
+    };
   } catch (error) {
+    console.error('Analysis error:', error);
     showError('Connection failed');
+    resetUI();
   }
+}
+
+function resetUI() {
+  DOM.connectBtn.innerHTML = '<i class="fas fa-play"></i> Start';
+  DOM.connectBtn.disabled = false;
+  DOM.pauseBtn.disabled = true;
+}
+
+function togglePause() {
+  isPaused = !isPaused;
+  DOM.pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> Resume' : '<i class="fas fa-pause"></i> Pause';
+}
+
+function resetAnalysis() {
+  tickHistory = [];
+  disconnectWebSocket();
+  updateDisplay();
+}
+
+function disconnectWebSocket() {
+  if (ws) ws.close();
+  resetUI();
 }
 
 function processTick(tick) {
@@ -176,7 +240,6 @@ function updateDisplay(lastDigit = null) {
 
   const { risePercent, fallPercent } = calculateRiseFall();
 
-  // Update progress bars - even/odd
   DOM.evenBar.style.width = `${evenPercent}%`;
   DOM.oddBar.style.width = `${oddPercent}%`;
   DOM.oddBar.style.right = '0';
@@ -184,7 +247,6 @@ function updateDisplay(lastDigit = null) {
   DOM.evenPercent.textContent = `${evenPercent}%`;
   DOM.oddPercent.textContent = `${oddPercent}%`;
 
-  // Update progress bars - rise/fall
   DOM.riseBar.style.width = `${risePercent}%`;
   DOM.fallBar.style.width = `${fallPercent}%`;
   DOM.fallBar.style.right = '0';
@@ -192,7 +254,6 @@ function updateDisplay(lastDigit = null) {
   DOM.risePercent.textContent = `${risePercent}%`;
   DOM.fallPercent.textContent = `${fallPercent}%`;
 
-  // Update circles
   DOM.circleContainer.innerHTML = '';
   const maxCount = Math.max(...counts);
   const minCount = Math.min(...counts.filter(c => c > 0)) || 0;
@@ -201,21 +262,17 @@ function updateDisplay(lastDigit = null) {
     const percent = total ? (counts[i] / total * 100).toFixed(1) : 0;
     const wrapper = document.createElement('div');
     wrapper.className = 'circle-wrapper';
-
     const circle = document.createElement('div');
     circle.className = `circle ${i === lastDigit ? 'current-tick' : ''} ${counts[i] === maxCount && total ? 'most-frequent' : ''} ${counts[i] === minCount && total ? 'least-frequent' : ''}`;
     circle.innerText = i;
-
     const stats = document.createElement('div');
     stats.className = 'stats';
     stats.innerText = `${percent}%`;
-
     wrapper.appendChild(circle);
     wrapper.appendChild(stats);
     DOM.circleContainer.appendChild(wrapper);
   }
 
-  // Update history
   updateHistory();
 }
 
@@ -236,25 +293,39 @@ function toggleHistory() {
   updateHistory();
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  if (!DOM.market || !DOM.tickCount || !DOM.lastTickValue || !DOM.lastTickTime || !DOM.totalTicks ||
-      !DOM.currentMarket || !DOM.evenBar || !DOM.oddBar || !DOM.evenPercent || !DOM.oddPercent ||
-      !DOM.riseBar || !DOM.fallBar || !DOM.risePercent || !DOM.fallPercent || !DOM.circleContainer ||
-      !DOM.historyContainer || !DOM.seeMoreBtn || !DOM.themeToggle) {
+  console.log('DOMContentLoaded fired');
+  if (!DOM.market || !DOM.tickCount || !DOM.connectBtn || !DOM.pauseBtn || !DOM.resetBtn ||
+      !DOM.lastTickValue || !DOM.lastTickTime || !DOM.totalTicks || !DOM.currentMarket ||
+      !DOM.evenBar || !DOM.oddBar || !DOM.evenPercent || !DOM.oddPercent ||
+      !DOM.riseBar || !DOM.fallBar || !DOM.risePercent || !DOM.fallPercent ||
+      !DOM.circleContainer || !DOM.historyContainer || !DOM.seeMoreBtn || !DOM.themeToggle) {
     showError('Missing required DOM elements');
+    console.error('Missing DOM elements:', Object.keys(DOM).filter(k => !DOM[k]));
     return;
   }
 
   DOM.themeToggle.addEventListener('click', toggleTheme);
+  DOM.connectBtn.addEventListener('click', connectWebSocket);
+  DOM.pauseBtn.addEventListener('click', togglePause);
+  DOM.resetBtn.addEventListener('click', resetAnalysis);
   DOM.seeMoreBtn.addEventListener('click', toggleHistory);
-  DOM.market.addEventListener('change', startAnalysis);
+  DOM.market.addEventListener('change', () => {
+    console.log('Market changed to:', DOM.market.value);
+    connectWebSocket();
+  });
+  DOM.tickCount.addEventListener('change', () => {
+    console.log('Tick count changed to:', DOM.tickCount.value);
+    connectWebSocket();
+  });
 
   const savedMarket = localStorage.getItem('market') || 'R_100';
   const savedTickCount = localStorage.getItem('tickCount') || '100';
   DOM.market.value = savedMarket;
   DOM.tickCount.value = savedTickCount;
+  console.log('Initial settings:', { market: savedMarket, tickCount: savedTickCount });
 
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
-  startAnalysis();
+  connectWebSocket();
 });
+```
