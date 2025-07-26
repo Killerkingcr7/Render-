@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -82,7 +83,8 @@
       min-width: 150px;
     }
 
-    select, input {
+    select,
+    input {
       width: 100%;
       padding: 8px;
       border-radius: 6px;
@@ -92,7 +94,8 @@
       font-size: 0.9rem;
     }
 
-    select:focus, input:focus {
+    select:focus,
+    input:focus {
       outline: none;
       border-color: var(--primary);
     }
@@ -250,15 +253,31 @@
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
-      70% { box-shadow: 0 0 0 8px rgba(255, 215, 0, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+      }
+
+      70% {
+        box-shadow: 0 0 0 8px rgba(255, 215, 0, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+      }
     }
 
     @keyframes glow {
-      0% { box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); }
-      50% { box-shadow: 0 0 15px rgba(0, 255, 127, 0.5); }
-      100% { box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); }
+      0% {
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 15px rgba(0, 255, 127, 0.5);
+      }
+
+      100% {
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      }
     }
 
     .circle-wrapper .stats {
@@ -298,10 +317,21 @@
       left: 0;
     }
 
-    .even-bar { background-color: var(--primary); }
-    .odd-bar { background-color: var(--primary-dark); }
-    .rise-bar { background-color: #00cc66; }
-    .fall-bar { background-color: #ff4d4d; }
+    .even-bar {
+      background-color: var(--primary);
+    }
+
+    .odd-bar {
+      background-color: var(--highlight-red)
+    }
+
+    .rise-bar {
+      background-color: #00cc66;
+    }
+
+    .fall-bar {
+      background-color: #ff4d4d;
+    }
 
     .history-container {
       grid-column: 1 / -1;
@@ -410,8 +440,13 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
     footer {
@@ -428,17 +463,48 @@
         grid-template-columns: 1fr;
         padding: 8px;
       }
-      .circle { width: 40px; height: 40px; font-size: 0.9rem; }
-      .circle-wrapper .stats { font-size: 0.65rem; }
-      .circle-container { grid-template-columns: repeat(5, 1fr); }
-      button, select, input { min-height: 40px; font-size: 0.85rem; }
+
+      .circle {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+      }
+
+      .circle-wrapper .stats {
+        font-size: 0.65rem;
+      }
+
+      .circle-container {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      button,
+      select,
+      input {
+        min-height: 40px;
+        font-size: 0.85rem;
+      }
     }
 
     @media (max-width: 480px) {
-      h1 { font-size: 1.3rem; }
-      .circle { width: 35px; height: 35px; font-size: 0.8rem; }
-      .circle-container { grid-template-columns: repeat(5, 1fr); gap: 6px; }
-      .stats-container { width: auto; }
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      .circle {
+        width: 35px;
+        height: 35px;
+        font-size: 0.8rem;
+      }
+
+      .circle-container {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+      }
+
+      .stats-container {
+        width: auto;
+      }
     }
   </style>
 </head>
@@ -527,4 +593,5 @@
   </footer>
   <script src="index.js"></script>
 </body>
+
 </html>
