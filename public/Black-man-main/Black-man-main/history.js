@@ -9,26 +9,7 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 let isHistoryExpanded = false;
 let isConnecting = false;
 
-const DOM = {
-  market: document.getElementById('market'),
-  tickCount: document.getElementById('ticks'),
-  lastTickValue: document.getElementById('last-tick-value'),
-  lastTickTime: document.getElementById('last-tick-time'),
-  totalTicks: document.getElementById('total-ticks'),
-  currentMarket: document.getElementById('current-market'),
-  evenBar: document.getElementById('even-bar'),
-  oddBar: document.getElementById('odd-bar'),
-  evenPercent: document.getElementById('even-%'),
-  oddPercent: document.getElementById('odd-%'),
-  riseBar: document.getElementById('rise-bar'),
-  fallBar: document.getElementById('fall-bar'),
-  risePercent: document.getElementById('rise-%'),
-  fallPercent: document.getElementById('fall-%'),
-  circleContainer: document.getElementById('circle-container'),
-  historyContainer: document.getElementById('history-container'),
-  seeMoreBtn: document.getElementById('see-more-btn'),
-  themeToggle: document.getElementById('theme-toggle')
-};
+let DOM = {};
 
 function toggleTheme() {
   isDarkMode = !isDarkMode;
@@ -124,15 +105,17 @@ function disconnectWebSocket() {
 }
 
 function processTick(tick) {
+  if (!DOM.market) return;
+
   const market = DOM.market.value;
   const priceStr = formatPrice(tick.quote, getVolatility(market));
   const lastDigit = parseInt(priceStr.match(/\.(\d+)$/)?.[1].slice(-1) || priceStr.slice(-1));
 
-  DOM.lastTickValue.textContent = priceStr;
-  DOM.lastTickTime.textContent = new Date().toLocaleTimeString();
+  if (DOM.lastTickValue) DOM.lastTickValue.textContent = priceStr;
+  if (DOM.lastTickTime) DOM.lastTickTime.textContent = new Date().toLocaleTimeString();
 
   tickHistory.push(lastDigit);
-  const tickLimit = parseInt(DOM.tickCount.value);
+  const tickLimit = DOM.tickCount ? parseInt(DOM.tickCount.value) : 100;
   if (tickHistory.length > tickLimit) tickHistory.shift();
 
   requestAnimationFrame(() => updateDisplay(lastDigit));
@@ -170,8 +153,10 @@ function calculateRiseFall() {
 
 function updateDisplay(lastDigit = null) {
   const total = tickHistory.length;
-  DOM.totalTicks.textContent = total;
-  DOM.currentMarket.textContent = DOM.market.options[DOM.market.selectedIndex].text;
+  if (DOM.totalTicks) DOM.totalTicks.textContent = total;
+  if (DOM.currentMarket && DOM.market) {
+    DOM.currentMarket.textContent = DOM.market.options[DOM.market.selectedIndex].text;
+  }
 
   const counts = Array(10).fill(0);
   tickHistory.forEach(num => counts[num]++);
@@ -183,22 +168,31 @@ function updateDisplay(lastDigit = null) {
   const { risePercent, fallPercent } = calculateRiseFall();
 
   // Update progress bars - even/odd
-  DOM.evenBar.style.width = `${evenPercent}%`;
-  DOM.oddBar.style.width = `${oddPercent}%`;
-  DOM.oddBar.style.right = '0';
-  DOM.oddBar.style.left = 'auto';
-  DOM.evenPercent.textContent = `${evenPercent}%`;
-  DOM.oddPercent.textContent = `${oddPercent}%`;
+  if (DOM.evenBar) {
+    DOM.evenBar.style.width = `${evenPercent}%`;
+  }
+  if (DOM.oddBar) {
+    DOM.oddBar.style.width = `${oddPercent}%`;
+    DOM.oddBar.style.right = '0';
+    DOM.oddBar.style.left = 'auto';
+  }
+  if (DOM.evenPercent) DOM.evenPercent.textContent = `${evenPercent}%`;
+  if (DOM.oddPercent) DOM.oddPercent.textContent = `${oddPercent}%`;
 
   // Update progress bars - rise/fall
-  DOM.riseBar.style.width = `${risePercent}%`;
-  DOM.fallBar.style.width = `${fallPercent}%`;
-  DOM.fallBar.style.right = '0';
-  DOM.fallBar.style.left = 'auto';
-  DOM.risePercent.textContent = `${risePercent}%`;
-  DOM.fallPercent.textContent = `${fallPercent}%`;
+  if (DOM.riseBar) {
+    DOM.riseBar.style.width = `${risePercent}%`;
+  }
+  if (DOM.fallBar) {
+    DOM.fallBar.style.width = `${fallPercent}%`;
+    DOM.fallBar.style.right = '0';
+    DOM.fallBar.style.left = 'auto';
+  }
+  if (DOM.risePercent) DOM.risePercent.textContent = `${risePercent}%`;
+  if (DOM.fallPercent) DOM.fallPercent.textContent = `${fallPercent}%`;
 
   // Update circles
+  if (!DOM.circleContainer) return;
   DOM.circleContainer.innerHTML = '';
   const maxCount = Math.max(...counts);
   const minCount = Math.min(...counts.filter(c => c > 0)) || 0;
@@ -226,6 +220,8 @@ function updateDisplay(lastDigit = null) {
 }
 
 function updateHistory() {
+  if (!DOM.historyContainer || !DOM.seeMoreBtn) return;
+
   DOM.historyContainer.innerHTML = '';
   const displayCount = isHistoryExpanded ? 100 : 10;
   tickHistory.slice(-displayCount).forEach(num => {
@@ -242,24 +238,70 @@ function toggleHistory() {
   updateHistory();
 }
 
+// Initialize DOM elements safely
+function initializeDOM() {
+  DOM = {
+    market: document.getElementById('market'),
+    tickCount: document.getElementById('ticks'),
+    lastTickValue: document.getElementById('last-tick-value'),
+    lastTickTime: document.getElementById('last-tick-time'),
+    totalTicks: document.getElementById('total-ticks'),
+    currentMarket: document.getElementById('current-market'),
+    evenBar: document.getElementById('even-bar'),
+    oddBar: document.getElementById('odd-bar'),
+    evenPercent: document.getElementById('even-%'),
+    oddPercent: document.getElementById('odd-%'),
+    riseBar: document.getElementById('rise-bar'),
+    fallBar: document.getElementById('fall-bar'),
+    risePercent: document.getElementById('rise-%'),
+    fallPercent: document.getElementById('fall-%'),
+    circleContainer: document.getElementById('circle-container'),
+    historyContainer: document.getElementById('history-container'),
+    seeMoreBtn: document.getElementById('see-more-btn'),
+    themeToggle: document.getElementById('theme-toggle')
+  };
+
+  // Check for missing elements
+  const missingElements = [];
+  for (const [key, element] of Object.entries(DOM)) {
+    if (!element) {
+      missingElements.push(key);
+    }
+  }
+
+  if (missingElements.length > 0) {
+    console.error('Missing DOM elements:', missingElements);
+    showError(`Missing elements: ${missingElements.join(', ')}`);
+    return false;
+  }
+
+  return true;
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize DOM elements first
+  if (!initializeDOM()) {
+    return; // Exit if DOM elements are missing
+  }
+
+  // Add event listeners
   DOM.themeToggle.addEventListener('click', toggleTheme);
   DOM.seeMoreBtn.addEventListener('click', toggleHistory);
-  
+
   // Load saved settings BEFORE adding event listeners to avoid triggering them
   const savedMarket = localStorage.getItem('market');
   const savedTickCount = localStorage.getItem('tickCount');
-  if (savedMarket) DOM.market.value = savedMarket;
-  if (savedTickCount) DOM.tickCount.value = savedTickCount;
+  if (savedMarket && DOM.market) DOM.market.value = savedMarket;
+  if (savedTickCount && DOM.tickCount) DOM.tickCount.value = savedTickCount;
 
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
-  
+
   // Auto-start analysis when market or tick count changes
   DOM.market.addEventListener('change', () => {
     connectWebSocket();
   });
-  
+
   DOM.tickCount.addEventListener('input', () => {
     // Debounce the input to avoid too many requests
     clearTimeout(window.tickCountTimeout);
@@ -267,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
       connectWebSocket();
     }, 500);
   });
-  
+
   // Auto-start on page load
   connectWebSocket();
 });
