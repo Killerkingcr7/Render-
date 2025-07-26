@@ -7,13 +7,11 @@ let isPaused = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 3;
 let isHistoryExpanded = false;
+let isConnecting = false;
 
 const DOM = {
   market: document.getElementById('market'),
   tickCount: document.getElementById('ticks'),
-  connectBtn: document.getElementById('connect-btn'),
-  pauseBtn: document.getElementById('pause-btn'),
-  resetBtn: document.getElementById('reset-btn'),
   lastTickValue: document.getElementById('last-tick-value'),
   lastTickTime: document.getElementById('last-tick-time'),
   totalTicks: document.getElementById('total-ticks'),
@@ -69,28 +67,32 @@ async function fetchHistoricalTicks(market, count) {
 }
 
 async function connectWebSocket() {
+  // Prevent multiple simultaneous connections
+  if (isConnecting) return;
+  isConnecting = true;
+
   const market = DOM.market.value;
   const tickLimit = parseInt(DOM.tickCount.value);
   localStorage.setItem('market', market);
   localStorage.setItem('tickCount', tickLimit);
 
-  DOM.connectBtn.disabled = true;
-  DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
-
   try {
+    // Close existing connection
+    if (ws) {
+      ws.onclose = null; // Remove event handler to prevent unwanted triggers
+      ws.close();
+    }
+
     tickHistory = [];
     const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
     tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
-    updateDisplay();
+    updateDisplay(); // Clear current tick indicator
 
-    if (ws) ws.close();
     ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
 
     ws.onopen = () => {
       reconnectAttempts = 0;
-      DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
-      DOM.connectBtn.disabled = false;
-      DOM.pauseBtn.disabled = false;
+      isConnecting = false;
       ws.send(JSON.stringify({ authorize: API_TOKEN }));
       ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
     };
@@ -103,41 +105,22 @@ async function connectWebSocket() {
     };
 
     ws.onclose = () => {
-      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-        reconnectAttempts++;
-        setTimeout(connectWebSocket, 2000 * reconnectAttempts);
-      } else {
-        showError('WebSocket connection lost');
-        resetUI();
-      }
+      isConnecting = false;
+      console.log('WebSocket connection closed');
     };
 
-    ws.onerror = () => showError('WebSocket error');
+    ws.onerror = () => {
+      isConnecting = false;
+      showError('WebSocket error');
+    };
   } catch (error) {
-    resetUI();
+    isConnecting = false;
+    showError('Failed to connect');
   }
-}
-
-function resetUI() {
-  DOM.connectBtn.innerHTML = '<i class="fas fa-play"></i> Start';
-  DOM.connectBtn.disabled = false;
-  DOM.pauseBtn.disabled = true;
-}
-
-function togglePause() {
-  isPaused = !isPaused;
-  DOM.pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> Resume' : '<i class="fas fa-pause"></i> Pause';
-}
-
-function resetAnalysis() {
-  tickHistory = [];
-  disconnectWebSocket();
-  updateDisplay();
 }
 
 function disconnectWebSocket() {
   if (ws) ws.close();
-  resetUI();
 }
 
 function processTick(tick) {
@@ -262,16 +245,29 @@ function toggleHistory() {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   DOM.themeToggle.addEventListener('click', toggleTheme);
-  DOM.connectBtn.addEventListener('click', connectWebSocket);
-  DOM.pauseBtn.addEventListener('click', togglePause);
-  DOM.resetBtn.addEventListener('click', resetAnalysis);
   DOM.seeMoreBtn.addEventListener('click', toggleHistory);
-
+  
+  // Load saved settings BEFORE adding event listeners to avoid triggering them
   const savedMarket = localStorage.getItem('market');
   const savedTickCount = localStorage.getItem('tickCount');
   if (savedMarket) DOM.market.value = savedMarket;
   if (savedTickCount) DOM.tickCount.value = savedTickCount;
 
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
+  
+  // Auto-start analysis when market or tick count changes
+  DOM.market.addEventListener('change', () => {
+    connectWebSocket();
+  });
+  
+  DOM.tickCount.addEventListener('input', () => {
+    // Debounce the input to avoid too many requests
+    clearTimeout(window.tickCountTimeout);
+    window.tickCountTimeout = setTimeout(() => {
+      connectWebSocket();
+    }, 500);
+  });
+  
+  // Auto-start on page load
   connectWebSocket();
 });
