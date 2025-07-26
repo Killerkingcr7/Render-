@@ -2,6 +2,7 @@ const API_TOKEN = "n6rqpKj9hrdfbiM";
 const APP_ID = "70549";
 let tickHistory = [];
 let ws;
+let wsHistory;
 let isDarkMode = false;
 let isPaused = false;
 let reconnectAttempts = 0;
@@ -29,9 +30,14 @@ function showError(message) {
 }
 
 async function fetchHistoricalTicks(market, count) {
-  const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
   return new Promise((resolve, reject) => {
-    wsHistory.onopen = () => wsHistory.send(JSON.stringify({ ticks_history: market, count, end: 'latest', style: 'ticks' }));
+    wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
+    
+    wsHistory.onopen = () => {
+      wsHistory.send(JSON.stringify({ authorize: API_TOKEN }));
+      wsHistory.send(JSON.stringify({ ticks_history: market, count, end: 'latest', style: 'ticks' }));
+    };
+    
     wsHistory.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.error) {
@@ -40,11 +46,17 @@ async function fetchHistoricalTicks(market, count) {
       } else if (data.history?.prices) {
         resolve(data.history.prices);
       }
-      wsHistory.close();
+      if (wsHistory) wsHistory.close();
     };
-    wsHistory.onerror = () => {
-      showError('Failed to fetch historical data');
-      reject();
+    
+    wsHistory.onerror = (error) => {
+      showError('Historical data error: ' + error.message);
+      reject(error);
+      if (wsHistory) wsHistory.close();
+    };
+    
+    wsHistory.onclose = () => {
+      wsHistory = null;
     };
   });
 }
@@ -63,22 +75,46 @@ async function connectWebSocket() {
   localStorage.setItem('market', market);
   localStorage.setItem('tickCount', tickLimit);
 
+  if (DOM.connectBtn) {
+    DOM.connectBtn.disabled = true;
+    DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+  }
+
   try {
+    // Clear existing connections
     if (ws) {
       ws.onclose = null;
       ws.close();
     }
+    if (wsHistory) {
+      wsHistory.close();
+    }
 
+    // Reset data
     tickHistory = [];
+
+    // First load historical data
+    if (DOM.connectBtn) {
+      DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading history...';
+    }
     const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
     tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
     updateDisplay();
 
+    // Then connect to real-time
+    if (DOM.connectBtn) {
+      DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+    }
+    
     ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
 
     ws.onopen = () => {
       reconnectAttempts = 0;
       isConnecting = false;
+      if (DOM.connectBtn) {
+        DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+        DOM.connectBtn.disabled = false;
+      }
       ws.send(JSON.stringify({ authorize: API_TOKEN }));
       ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
     };
@@ -90,18 +126,41 @@ async function connectWebSocket() {
       if (data.tick) processTick(data.tick);
     };
 
-    ws.oncloor = () => {
+    ws.onclose = () => {
       isConnecting = false;
-      showError('WebSocket error');
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+      } else {
+        showError('Connection lost');
+        resetUI();
+      }
+    };
+
+    ws.onerror = (error) => {
+      isConnecting = false;
+      showError('WebSocket error: ' + error.message);
+      resetUI();
     };
   } catch (error) {
     isConnecting = false;
-    showError('Failed to connect');
+    showError('Connection error: ' + error.message);
+    resetUI();
   }
+}
+
+function resetUI() {
+  if (DOM.connectBtn) {
+    DOM.connectBtn.innerHTML = '<i class="fas fa-play"></i> Start';
+    DOM.connectBtn.disabled = false;
+  }
+  if (DOM.pauseBtn) DOM.pauseBtn.disabled = true;
 }
 
 function disconnectWebSocket() {
   if (ws) ws.close();
+  if (wsHistory) wsHistory.close();
+  isConnecting = false;
 }
 
 function processTick(tick) {
@@ -167,10 +226,7 @@ function updateDisplay(lastDigit = null) {
 
   const { risePercent, fallPercent } = calculateRiseFall();
 
-  // Update progress bars - even/odd
-  if (DOM.evenBar) {
-    DOM.evenBar.style.width = `${evenPercent}%`;
-  }
+  if (DOM.evenBar) DOM.evenBar.style.width = `${evenPercent}%`;
   if (DOM.oddBar) {
     DOM.oddBar.style.width = `${oddPercent}%`;
     DOM.oddBar.style.right = '0';
@@ -179,10 +235,7 @@ function updateDisplay(lastDigit = null) {
   if (DOM.evenPercent) DOM.evenPercent.textContent = `${evenPercent}%`;
   if (DOM.oddPercent) DOM.oddPercent.textContent = `${oddPercent}%`;
 
-  // Update progress bars - rise/fall
-  if (DOM.riseBar) {
-    DOM.riseBar.style.width = `${risePercent}%`;
-  }
+  if (DOM.riseBar) DOM.riseBar.style.width = `${risePercent}%`;
   if (DOM.fallBar) {
     DOM.fallBar.style.width = `${fallPercent}%`;
     DOM.fallBar.style.right = '0';
@@ -191,7 +244,6 @@ function updateDisplay(lastDigit = null) {
   if (DOM.risePercent) DOM.risePercent.textContent = `${risePercent}%`;
   if (DOM.fallPercent) DOM.fallPercent.textContent = `${fallPercent}%`;
 
-  // Update circles
   if (!DOM.circleContainer) return;
   DOM.circleContainer.innerHTML = '';
   const maxCount = Math.max(...counts);
@@ -215,7 +267,6 @@ function updateDisplay(lastDigit = null) {
     DOM.circleContainer.appendChild(wrapper);
   }
 
-  // Update history
   updateHistory();
 }
 
@@ -238,11 +289,13 @@ function toggleHistory() {
   updateHistory();
 }
 
-// Initialize DOM elements safely
 function initializeDOM() {
   DOM = {
     market: document.getElementById('market'),
     tickCount: document.getElementById('ticks'),
+    connectBtn: document.getElementById('connect-btn'),
+    pauseBtn: document.getElementById('pause-btn'),
+    resetBtn: document.getElementById('reset-btn'),
     lastTickValue: document.getElementById('last-tick-value'),
     lastTickTime: document.getElementById('last-tick-time'),
     totalTicks: document.getElementById('total-ticks'),
@@ -261,50 +314,43 @@ function initializeDOM() {
     themeToggle: document.getElementById('theme-toggle')
   };
 
-  // Check for critical missing elements (only the ones that must exist)
-  const criticalElements = ['market', 'tickCount', 'circleContainer', 'themeToggle', 'seeMoreBtn'];
+  const criticalElements = ['market', 'tickCount', 'circleContainer', 'themeToggle'];
   const missingCritical = [];
 
   for (const key of criticalElements) {
     if (!DOM[key]) {
       missingCritical.push(key);
-      console.error(`Critical element missing: ${key} (looking for id="${key === 'tickCount' ? 'ticks' : key}")`);
+      console.error(`Critical element missing: ${key}`);
     }
   }
 
   if (missingCritical.length > 0) {
     console.error('Missing critical DOM elements:', missingCritical);
-    showError(`Missing critical elements: ${missingCritical.join(', ')}`);
+    showError(`Missing elements: ${missingCritical.join(', ')}`);
     return false;
-  }
-
-  // Log missing optional elements for debugging
-  const optionalElements = Object.keys(DOM).filter(key => !criticalElements.includes(key));
-  const missingOptional = optionalElements.filter(key => !DOM[key]);
-  if (missingOptional.length > 0) {
-    console.warn('Missing optional DOM elements:', missingOptional);
   }
 
   return true;
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize DOM elements first
-  if (!initializeDOM()) {
-    return; // Exit if DOM elements are missing
-  }
+  if (!initializeDOM()) return;
 
-  // Add event listeners with null checks
-  if (DOM.themeToggle) {
-    DOM.themeToggle.addEventListener('click', toggleTheme);
-  }
+  // Event listeners
+  if (DOM.themeToggle) DOM.themeToggle.addEventListener('click', toggleTheme);
+  if (DOM.connectBtn) DOM.connectBtn.addEventListener('click', connectWebSocket);
+  if (DOM.pauseBtn) DOM.pauseBtn.addEventListener('click', () => {
+    isPaused = !isPaused;
+    DOM.pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> Resume' : '<i class="fas fa-pause"></i> Pause';
+  });
+  if (DOM.resetBtn) DOM.resetBtn.addEventListener('click', () => {
+    tickHistory = [];
+    disconnectWebSocket();
+    updateDisplay();
+  });
+  if (DOM.seeMoreBtn) DOM.seeMoreBtn.addEventListener('click', toggleHistory);
 
-  if (DOM.seeMoreBtn) {
-    DOM.seeMoreBtn.addEventListener('click', toggleHistory);
-  }
-
-  // Load saved settings BEFORE adding event listeners to avoid triggering them
+  // Load settings
   const savedMarket = localStorage.getItem('market');
   const savedTickCount = localStorage.getItem('tickCount');
   if (savedMarket && DOM.market) DOM.market.value = savedMarket;
@@ -312,23 +358,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
 
-  // Auto-start analysis when market or tick count changes
+  // Auto-start with debounced tick count changes
   if (DOM.market) {
-    DOM.market.addEventListener('change', () => {
-      connectWebSocket();
-    });
+    DOM.market.addEventListener('change', connectWebSocket);
   }
-
   if (DOM.tickCount) {
+    let tickCountTimeout;
     DOM.tickCount.addEventListener('input', () => {
-      // Debounce the input to avoid too many requests
-      clearTimeout(window.tickCountTimeout);
-      window.tickCountTimeout = setTimeout(() => {
-        connectWebSocket();
-      }, 500);
+      clearTimeout(tickCountTimeout);
+      tickCountTimeout = setTimeout(connectWebSocket, 500);
     });
   }
 
-  // Auto-start on page load
+  // Initial connection
   connectWebSocket();
 });
