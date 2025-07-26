@@ -12,7 +12,7 @@ let oauthToken = null;
 let tradeHistory = [];
 
 const ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=80058');
-
+const API_TOKEN = "n6rqpKj9hrdfbiM";
 ws.onopen = () => {
     Object.keys(ticksStorage).forEach(subscribeTicks);
 };
