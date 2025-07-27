@@ -199,7 +199,6 @@ function updateDisplay(lastDigit = null) {
 
   const { risePercent, fallPercent } = calculateRiseFall();
 
-  // Update progress bars - even/odd
   DOM.evenBar.style.width = `${evenPercent}%`;
   DOM.oddBar.style.width = `${oddPercent}%`;
   DOM.oddBar.style.right = '0';
@@ -207,7 +206,6 @@ function updateDisplay(lastDigit = null) {
   DOM.evenPercent.textContent = `${evenPercent}%`;
   DOM.oddPercent.textContent = `${oddPercent}%`;
 
-  // Update progress bars - rise/fall
   DOM.riseBar.style.width = `${risePercent}%`;
   DOM.fallBar.style.width = `${fallPercent}%`;
   DOM.fallBar.style.right = '0';
@@ -215,7 +213,6 @@ function updateDisplay(lastDigit = null) {
   DOM.risePercent.textContent = `${risePercent}%`;
   DOM.fallPercent.textContent = `${fallPercent}%`;
 
-  // Update circles
   DOM.circleContainer.innerHTML = '';
   const maxCount = Math.max(...counts);
   const minCount = Math.min(...counts.filter(c => c > 0)) || 0;
@@ -238,7 +235,6 @@ function updateDisplay(lastDigit = null) {
     DOM.circleContainer.appendChild(wrapper);
   }
 
-  // Update history
   updateHistory();
 }
 
@@ -262,10 +258,36 @@ function toggleHistory() {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   DOM.themeToggle.addEventListener('click', toggleTheme);
-  DOM.connectBtn.addEventListener('click', connectWebSocket);
+  DOM.connectBtn.addEventListener('click', () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      disconnectWebSocket();
+    } else {
+      connectWebSocket();
+    }
+  });
   DOM.pauseBtn.addEventListener('click', togglePause);
   DOM.resetBtn.addEventListener('click', resetAnalysis);
   DOM.seeMoreBtn.addEventListener('click', toggleHistory);
+
+  // Add market change handler
+  DOM.market.addEventListener('change', () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      // Update display with new market
+      DOM.currentMarket.textContent = DOM.market.options[DOM.market.selectedIndex].text;
+      // Clear existing tick history
+      tickHistory = [];
+      updateDisplay();
+      // Fetch historical ticks for new market
+      const market = DOM.market.value;
+      const tickLimit = parseInt(DOM.tickCount.value);
+      fetchHistoricalTicks(market, tickLimit)
+        .then(historicalTicks => {
+          tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
+          updateDisplay();
+        })
+        .catch(error => showError('Failed to fetch historical data'));
+    }
+  });
 
   const savedMarket = localStorage.getItem('market');
   const savedTickCount = localStorage.getItem('tickCount');
@@ -273,5 +295,4 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedTickCount) DOM.tickCount.value = savedTickCount;
 
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
-  connectWebSocket();
-});   
+});
