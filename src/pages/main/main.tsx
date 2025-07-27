@@ -121,7 +121,7 @@ const AppWrapper = observer(() => {
                 'dec  entry point.xml',
                'Over the years .xml',
                 'Thunder ⚡.xml',
-                'Wantam switcher .xml',
+                'Wantam switcher.xml',
                 'Reborn HnR.xml',
 
                 // Add more paths to your XML files
