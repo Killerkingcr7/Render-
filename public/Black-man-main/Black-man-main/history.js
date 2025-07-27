@@ -274,4 +274,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
   connectWebSocket();
-});    this script works fine but it doesnt auto fetch the ticks when one changes the bolatility,fix that and bring it whole fixed
+});   
