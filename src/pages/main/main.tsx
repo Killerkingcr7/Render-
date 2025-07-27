@@ -122,6 +122,8 @@ const AppWrapper = observer(() => {
                'Over the years .xml',
                 'Scofield Hub Ai robot.xml',
                 'Thunder ⚡.xml',
+                'Wantam switcher',
+                'Reborn HnR',
 
                 // Add more paths to your XML files
             ];
