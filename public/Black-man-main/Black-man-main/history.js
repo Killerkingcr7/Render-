@@ -1,13 +1,13 @@
 const API_TOKEN = "n6rqpKj9hrdfbiM";
 const APP_ID = "70549";
 let tickHistory = [];
-let ws;
+let ws = null;
 let isDarkMode = false;
 let isPaused = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 3;
 let isHistoryExpanded = false;
-let currentMarket = ""; // Added to track current market
+let currentMarket = "";
 
 const DOM = {
   market: document.getElementById('market'),
@@ -69,6 +69,29 @@ async function fetchHistoricalTicks(market, count) {
   });
 }
 
+function switchMarket(newMarket) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    connectWebSocket();
+    return;
+  }
+
+  // Unsubscribe from current market first
+  ws.send(JSON.stringify({ forget: currentMarket }));
+  
+  // Subscribe to new market
+  ws.send(JSON.stringify({ ticks: newMarket, subscribe: 1 }));
+  currentMarket = newMarket;
+  
+  // Refresh historical data
+  const tickLimit = parseInt(DOM.tickCount.value);
+  fetchHistoricalTicks(newMarket, tickLimit)
+    .then(historicalTicks => {
+      tickHistory = historicalTicks.map(price => extractLastDigit(price, newMarket));
+      updateDisplay();
+    })
+    .catch(() => showError('Failed to load history'));
+}
+
 async function connectWebSocket() {
   const market = DOM.market.value;
   const tickLimit = parseInt(DOM.tickCount.value);
@@ -85,19 +108,16 @@ async function connectWebSocket() {
     tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
     updateDisplay();
 
-    // Only create new connection if needed
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      if (ws) ws.close();
-      ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
-    } else {
-      // Already connected, just update subscription
-      ws.send(JSON.stringify({ forget: currentMarket }));
-      ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      switchMarket(market);
       DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
       DOM.connectBtn.disabled = false;
       DOM.pauseBtn.disabled = false;
       return;
     }
+
+    if (ws) ws.close();
+    ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
 
     ws.onopen = () => {
       reconnectAttempts = 0;
@@ -127,6 +147,7 @@ async function connectWebSocket() {
 
     ws.onerror = () => showError('WebSocket error');
   } catch (error) {
+    showError('Connection failed: ' + error.message);
     resetUI();
   }
 }
@@ -274,28 +295,21 @@ function toggleHistory() {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   DOM.themeToggle.addEventListener('click', toggleTheme);
-  DOM.connectBtn.addEventListener('click', connectWebSocket);
+  DOM.connectBtn.addEventListener('click', () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      disconnectWebSocket();
+    } else {
+      connectWebSocket();
+    }
+  });
   DOM.pauseBtn.addEventListener('click', togglePause);
   DOM.resetBtn.addEventListener('click', resetAnalysis);
   DOM.seeMoreBtn.addEventListener('click', toggleHistory);
 
-  // Handle market changes without reconnecting
+  // Handle market changes
   DOM.market.addEventListener('change', () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      // Update subscription to new market
-      const newMarket = DOM.market.value;
-      ws.send(JSON.stringify({ forget: currentMarket }));
-      ws.send(JSON.stringify({ ticks: newMarket, subscribe: 1 }));
-      currentMarket = newMarket;
-      
-      // Refresh historical data for new market
-      const tickLimit = parseInt(DOM.tickCount.value);
-      fetchHistoricalTicks(newMarket, tickLimit)
-        .then(historicalTicks => {
-          tickHistory = historicalTicks.map(price => extractLastDigit(price, newMarket));
-          updateDisplay();
-        })
-        .catch(() => showError('Failed to load history'));
+      switchMarket(DOM.market.value);
     }
   });
 
