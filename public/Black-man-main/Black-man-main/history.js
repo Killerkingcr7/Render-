@@ -1,238 +1,277 @@
 const API_TOKEN = "n6rqpKj9hrdfbiM";
-  const APP_ID = "70549";
-  let tickHistory = [];
-  let ws;
-  let isDarkMode = false;
-  
-  // Initialize the app
-  document.addEventListener('DOMContentLoaded', function() {
-    // Theme toggle functionality
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', toggleTheme);
-    
-    // Check for saved theme preference
-    if (localStorage.getItem('theme') === 'dark') {
-      isDarkMode = true;
-      document.body.setAttribute('data-theme', 'dark');
-      document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
-    }
-  });
-  
-  function toggleTheme() {
-    isDarkMode = !isDarkMode;
-    if (isDarkMode) {
-      document.body.setAttribute('data-theme', 'dark');
-      document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.body.removeAttribute('data-theme');
-      document.getElementById('themeToggle').innerHTML = '<i class="fas fa-moon"></i>';
-      localStorage.setItem('theme', 'light');
-    }
-  }
+const APP_ID = "70549";
+let tickHistory = [];
+let ws;
+let isDarkMode = false;
+let isPaused = false;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 3;
+let isHistoryExpanded = false;
 
-  function connectWebSocket() {
-    const market = document.getElementById("market").value;
-    const tickLimit = parseInt(document.getElementById("tickCount").value);
-    tickHistory = []; // Reset history when starting new analysis
-    
-    // Update UI
-    document.getElementById('currentMarket').textContent = 
-      document.getElementById('market').options[document.getElementById('market').selectedIndex].text;
-    
-    // Show loading state
-    document.getElementById('loadingIndicator').style.display = 'block';
-    document.getElementById('connectBtn').disabled = true;
-    document.getElementById('connectBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
-    
-    if (ws) ws.close(); // Close existing connection if any
+const DOM = {
+  market: document.getElementById('market'),
+  tickCount: document.getElementById('ticks'),
+  connectBtn: document.getElementById('connect-btn'),
+  pauseBtn: document.getElementById('pause-btn'),
+  resetBtn: document.getElementById('reset-btn'),
+  lastTickValue: document.getElementById('last-tick-value'),
+  lastTickTime: document.getElementById('last-tick-time'),
+  totalTicks: document.getElementById('total-ticks'),
+  currentMarket: document.getElementById('current-market'),
+  evenBar: document.getElementById('even-bar'),
+  oddBar: document.getElementById('odd-bar'),
+  evenPercent: document.getElementById('even-%'),
+  oddPercent: document.getElementById('odd-%'),
+  riseBar: document.getElementById('rise-bar'),
+  fallBar: document.getElementById('fall-bar'),
+  risePercent: document.getElementById('rise-%'),
+  fallPercent: document.getElementById('fall-%'),
+  circleContainer: document.getElementById('circle-container'),
+  historyContainer: document.getElementById('history-container'),
+  seeMoreBtn: document.getElementById('see-more-btn'),
+  themeToggle: document.getElementById('theme-toggle')
+};
 
-    ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
+function toggleTheme() {
+  isDarkMode = !isDarkMode;
+  document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+  DOM.themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+}
 
-    ws.onopen = function() {
-      console.log("Connected to WebSocket");
-      document.getElementById('connectBtn').innerHTML = '<i class="fas fa-stop"></i> Stop Analysis';
-      document.getElementById('connectBtn').disabled = false;
-      document.getElementById('loadingIndicator').style.display = 'none';
-      
-      ws.send(JSON.stringify({ authorize: API_TOKEN }));
-      subscribeToMarket(market);
-    };
+function showError(message) {
+  const error = document.createElement('div');
+  error.className = 'error-message';
+  error.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+  document.body.appendChild(error);
+  setTimeout(() => error.remove(), 5000);
+}
 
-    ws.onmessage = function(event) {
+async function fetchHistoricalTicks(market, count) {
+  const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
+  return new Promise((resolve, reject) => {
+    wsHistory.onopen = () => wsHistory.send(JSON.stringify({ ticks_history: market, count, end: 'latest', style: 'ticks' }));
+    wsHistory.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.error) {
         showError(data.error.message);
-        return;
+        reject(data.error.message);
+      } else if (data.history?.prices) {
+        resolve(data.history.prices);
       }
+      wsHistory.close();
+    };
+    wsHistory.onerror = () => {
+      showError('Failed to fetch historical data');
+      reject();
+    };
+  });
+}
+
+async function connectWebSocket() {
+  const market = DOM.market.value;
+  const tickLimit = parseInt(DOM.tickCount.value);
+  localStorage.setItem('market', market);
+  localStorage.setItem('tickCount', tickLimit);
+
+  DOM.connectBtn.disabled = true;
+  DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+
+  try {
+    tickHistory = [];
+    const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
+    tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
+    updateDisplay();
+
+    if (ws) ws.close();
+    ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
+
+    ws.onopen = () => {
+      reconnectAttempts = 0;
+      DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+      DOM.connectBtn.disabled = false;
+      DOM.pauseBtn.disabled = false;
+      ws.send(JSON.stringify({ authorize: API_TOKEN }));
+      ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
+    };
+
+    ws.onmessage = (event) => {
+      if (isPaused) return;
+      const data = JSON.parse(event.data);
+      if (data.error) showError(data.error.message);
       if (data.tick) processTick(data.tick);
     };
 
-    ws.onclose = function() {
-      console.log("WebSocket disconnected");
-      document.getElementById('connectBtn').innerHTML = '<i class="fas fa-play"></i> Start Analysis';
-      document.getElementById('connectBtn').disabled = false;
+    ws.onclose = () => {
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+      } else {
+        showError('WebSocket connection lost');
+        resetUI();
+      }
     };
 
-    ws.onerror = function(error) {
-      showError("WebSocket connection error");
-      console.error("WebSocket error:", error);
-    };
+    ws.onerror = () => showError('WebSocket error');
+  } catch (error) {
+    resetUI();
+  }
+}
+
+function resetUI() {
+  DOM.connectBtn.innerHTML = '<i class="fas fa-play"></i> Start';
+  DOM.connectBtn.disabled = false;
+  DOM.pauseBtn.disabled = true;
+}
+
+function togglePause() {
+  isPaused = !isPaused;
+  DOM.pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> Resume' : '<i class="fas fa-pause"></i> Pause';
+}
+
+function resetAnalysis() {
+  tickHistory = [];
+  disconnectWebSocket();
+  updateDisplay();
+}
+
+function disconnectWebSocket() {
+  if (ws) ws.close();
+  resetUI();
+}
+
+function processTick(tick) {
+  const market = DOM.market.value;
+  const priceStr = formatPrice(tick.quote, getVolatility(market));
+  const lastDigit = parseInt(priceStr.match(/\.(\d+)$/)?.[1].slice(-1) || priceStr.slice(-1));
+
+  DOM.lastTickValue.textContent = priceStr;
+  DOM.lastTickTime.textContent = new Date().toLocaleTimeString();
+
+  tickHistory.push(lastDigit);
+  const tickLimit = parseInt(DOM.tickCount.value);
+  if (tickHistory.length > tickLimit) tickHistory.shift();
+
+  requestAnimationFrame(() => updateDisplay(lastDigit));
+}
+
+function extractLastDigit(price, market) {
+  const volatility = getVolatility(market);
+  const formattedPrice = price.toFixed(getDecimalPlacesFromVolatility(volatility));
+  return parseInt(formattedPrice.match(/\.(\d+)$/)?.[1].slice(-1) || formattedPrice.slice(-1));
+}
+
+function formatPrice(price, volatility) {
+  return price.toFixed(getDecimalPlacesFromVolatility(volatility));
+}
+
+function getVolatility(market) {
+  return { R_10: '10', R_25: '25', R_50: '50', R_75: '75', R_100: '100' }[market] || '100';
+}
+
+function getDecimalPlacesFromVolatility(volatility) {
+  return { '10': 3, '25': 3, '50': 4, '75': 4 }[volatility] || 2;
+}
+
+function calculateRiseFall() {
+  let rise = 0, fall = 0;
+  for (let i = 1; i < tickHistory.length; i++) {
+    if (tickHistory[i] > tickHistory[i - 1]) rise++;
+    else if (tickHistory[i] < tickHistory[i - 1]) fall++;
+  }
+  const total = tickHistory.length - 1;
+  const risePercent = total ? (rise / total * 100).toFixed(1) : 0;
+  const fallPercent = total ? (100 - parseFloat(risePercent)).toFixed(1) : 0;
+  return { risePercent, fallPercent };
+}
+
+function updateDisplay(lastDigit = null) {
+  const total = tickHistory.length;
+  DOM.totalTicks.textContent = total;
+  DOM.currentMarket.textContent = DOM.market.options[DOM.market.selectedIndex].text;
+
+  const counts = Array(10).fill(0);
+  tickHistory.forEach(num => counts[num]++);
+
+  const even = tickHistory.filter(n => n % 2 === 0).length;
+  const evenPercent = total ? (even / total * 100).toFixed(1) : 0;
+  const oddPercent = total ? (100 - parseFloat(evenPercent)).toFixed(1) : 0;
+
+  const { risePercent, fallPercent } = calculateRiseFall();
+
+  // Update progress bars - even/odd
+  DOM.evenBar.style.width = `${evenPercent}%`;
+  DOM.oddBar.style.width = `${oddPercent}%`;
+  DOM.oddBar.style.right = '0';
+  DOM.oddBar.style.left = 'auto';
+  DOM.evenPercent.textContent = `${evenPercent}%`;
+  DOM.oddPercent.textContent = `${oddPercent}%`;
+
+  // Update progress bars - rise/fall
+  DOM.riseBar.style.width = `${risePercent}%`;
+  DOM.fallBar.style.width = `${fallPercent}%`;
+  DOM.fallBar.style.right = '0';
+  DOM.fallBar.style.left = 'auto';
+  DOM.risePercent.textContent = `${risePercent}%`;
+  DOM.fallPercent.textContent = `${fallPercent}%`;
+
+  // Update circles
+  DOM.circleContainer.innerHTML = '';
+  const maxCount = Math.max(...counts);
+  const minCount = Math.min(...counts.filter(c => c > 0)) || 0;
+
+  for (let i = 0; i <= 9; i++) {
+    const percent = total ? (counts[i] / total * 100).toFixed(1) : 0;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'circle-wrapper';
+
+    const circle = document.createElement('div');
+    circle.className = `circle ${i === lastDigit ? 'current-tick' : ''} ${counts[i] === maxCount && total ? 'most-frequent' : ''} ${counts[i] === minCount && total ? 'least-frequent' : ''}`;
+    circle.innerText = i;
+
+    const stats = document.createElement('div');
+    stats.className = 'stats';
+    stats.innerText = `${percent}%`;
+
+    wrapper.appendChild(circle);
+    wrapper.appendChild(stats);
+    DOM.circleContainer.appendChild(wrapper);
   }
 
-  function subscribeToMarket(market) {
-    console.log("Subscribing to:", market);
-    ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
-  }
+  // Update history
+  updateHistory();
+}
 
-  function processTick(tick) {
-    const raw = tick.quote;
-    const market = document.getElementById("market").value;
-    const volatility = getVolatility(market);
-    let priceStr = formatPrice(raw, volatility);
-    
-    const match = priceStr.match(/\.(\d+)$/);
-    let lastDigit = match ? match[1].slice(-1) : priceStr.slice(-1);
-    
-    document.getElementById("lastTickValue").textContent = priceStr;
-    
-    // Add new tick to history
-    tickHistory.push(lastDigit);
-    
-    // Maintain history size according to user setting
-    const tickLimit = parseInt(document.getElementById("tickCount").value);
-    if (tickHistory.length > tickLimit) tickHistory.shift();
-    
-    // Update the display with new data
-    updateDisplay(lastDigit);
-  }
+function updateHistory() {
+  DOM.historyContainer.innerHTML = '';
+  const displayCount = isHistoryExpanded ? 100 : 10;
+  tickHistory.slice(-displayCount).forEach(num => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerText = num;
+    DOM.historyContainer.appendChild(item);
+  });
+  DOM.seeMoreBtn.textContent = isHistoryExpanded ? 'See Less' : 'See More (Last 100 Digits)';
+}
 
-  function formatPrice(price, volatility) {
-    return price.toFixed(getDecimalPlacesFromVolatility(volatility));
-  }
+function toggleHistory() {
+  isHistoryExpanded = !isHistoryExpanded;
+  updateHistory();
+}
 
-  function getVolatility(market) {
-    const marketToVolatilityMap = {
-      "R_10": "10", "R_25": "25", "R_50": "50", "R_75": "75", "R_100": "100"
-    };
-    return marketToVolatilityMap[market] || "100";
-  }
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  DOM.themeToggle.addEventListener('click', toggleTheme);
+  DOM.connectBtn.addEventListener('click', connectWebSocket);
+  DOM.pauseBtn.addEventListener('click', togglePause);
+  DOM.resetBtn.addEventListener('click', resetAnalysis);
+  DOM.seeMoreBtn.addEventListener('click', toggleHistory);
 
-  function getDecimalPlacesFromVolatility(volatility) {
-    if (volatility === "10" || volatility === "25") return 3;
-    if (volatility === "50" || volatility === "75") return 4;
-    return 2;
-  }
+  const savedMarket = localStorage.getItem('market');
+  const savedTickCount = localStorage.getItem('tickCount');
+  if (savedMarket) DOM.market.value = savedMarket;
+  if (savedTickCount) DOM.tickCount.value = savedTickCount;
 
-  function calculateRiseFall() {
-    let rise = 0;
-    let fall = 0;
-    for (let i = 1; i < tickHistory.length; i++) {
-      if (tickHistory[i] > tickHistory[i - 1]) rise++;
-      else if (tickHistory[i] < tickHistory[i - 1]) fall++;
-    }
-
-    const total = tickHistory.length - 1; // We can't compare the first tick
-    const risePercent = total ? ((rise / total) * 100) : 0;
-    const fallPercent = total ? ((fall / total) * 100) : 0;
-
-    return { rise, fall, risePercent, fallPercent };
-  }
-
-  function updateDisplay(lastDigit) {
-    // Update total ticks counter
-    document.getElementById('totalTicks').textContent = tickHistory.length;
-    
-    // Calculate digit frequencies
-    let counts = Array(10).fill(0);
-    tickHistory.forEach(num => counts[num]++);
-    
-    // Calculate even/odd distribution
-    const total = tickHistory.length;
-    const even = tickHistory.filter(n => n % 2 === 0).length;
-    const odd = total - even;
-    
-    // Fixed even/odd percentage calculation
-    const evenPercent = total ? ((even / total) * 100).toFixed(1) : 0;
-    const oddPercent = (100 - parseFloat(evenPercent)).toFixed(1); // Ensures sum is exactly 100%
-    
-    const { risePercent, fallPercent } = calculateRiseFall();
-    
-    // Update stats bars
-    document.getElementById('evenBar').style.width = `${evenPercent}%`;
-    document.getElementById('evenBar').textContent = evenPercent >= 10 ? `${evenPercent}%` : '';
-    document.getElementById('evenPercent').textContent = `${evenPercent}%`;
-    document.getElementById('oddPercent').textContent = `${oddPercent}%`;
-    
-    document.getElementById('riseBar').style.width = `${risePercent}%`;
-    document.getElementById('riseBar').textContent = risePercent >= 10 ? `${risePercent.toFixed(1)}%` : '';
-    document.getElementById('risePercent').textContent = `${risePercent.toFixed(1)}%`;
-    document.getElementById('fallPercent').textContent = `${fallPercent.toFixed(1)}%`;
-    
-    // Update digit circles
-    const circleContainer = document.getElementById("circleContainer");
-    circleContainer.innerHTML = "";
-    
-    for (let i = 0; i <= 9; i++) {
-      let percent = total ? ((counts[i] / total) * 100).toFixed(1) : "0.0";
-      const hue = i * 36;
-      const color = `hsl(${hue}, 70%, 50%)`;
-      
-      const wrapper = document.createElement("div");
-      wrapper.className = "digit-wrapper";
-      
-      const circle = document.createElement("div");
-      circle.className = "circle";
-      if (i == lastDigit) circle.classList.add("glow");
-      circle.style.background = color;
-      circle.innerText = i;
-      
-      const info = document.createElement("div");
-      info.className = "digit-info";
-      info.innerHTML = `<strong>${percent}%</strong><br>(${counts[i]})`;
-      
-      wrapper.appendChild(circle);
-      wrapper.appendChild(info);
-      circleContainer.appendChild(wrapper);
-    }
-    
-    // Update history display (last 20 items)
-    const historyContainer = document.getElementById("historyContainer");
-    historyContainer.innerHTML = "";
-    const displayItems = tickHistory.slice(-20);
-    
-    displayItems.forEach((num, index) => {
-      const isRecent = index >= displayItems.length - 5;
-      const item = document.createElement("div");
-      item.className = "history-item";
-      if (isRecent) item.style.fontWeight = "800";
-      item.innerText = num;
-      historyContainer.appendChild(item);
-    });
-  }
-
-  function showError(message) {
-    const errorElement = document.createElement('div');
-    errorElement.className = 'error-message';
-    errorElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-    errorElement.style.position = 'fixed';
-    errorElement.style.bottom = '20px';
-    errorElement.style.left = '50%';
-    errorElement.style.transform = 'translateX(-50%)';
-    errorElement.style.backgroundColor = 'var(--danger)';
-    errorElement.style.color = 'white';
-    errorElement.style.padding = '10px 20px';
-    errorElement.style.borderRadius = '8px';
-    errorElement.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-    errorElement.style.zIndex = '1000';
-    errorElement.style.animation = 'fadeIn 0.3s ease';
-    
-    document.body.appendChild(errorElement);
-    
-    setTimeout(() => {
-      errorElement.style.animation = 'fadeOut 0.3s ease';
-      setTimeout(() => {
-        document.body.removeChild(errorElement);
-      }, 300);
-    }, 5000);
-  }
+  if (localStorage.getItem('theme') === 'dark') toggleTheme();
+  connectWebSocket();
+});    this script works fine but it doesnt auto fetch the ticks when one changes the bolatility,fix that and bring it whole fixed
