@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deriv Last Digit Analysis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deriv Last Digit Analysis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Deriv Last Digit Analysis</h1>
+      <h3>Advanced Market Probability Tool</h3>
+      
+      <div class="navbar">
+        <a href="History.html" class="active" id="historicalLink">
+          <i class="fas fa-chart-line"></i> Historical Analysis
+        </a>
+        <a href="index.html" id="newAnalysisLink">
+          <i class="fas fa-bolt"></i> Real-time Analysis
+        </a>
+      </div>
+    </header>
+    
+    <div class="controls-container">
+      <div id="lastTick" class="last-tick-container">
+        <i class="fas fa-sync-alt"></i> Last Tick: <span id="lastTickValue">N/A</span>
+      </div>
+      
+      <div class="form-group">
+        <label for="market"><i class="fas fa-chart-pie"></i> Select Market:</label>
+        <select id="market">
+          <option value="R_10">Volatility 10 Index</option>
+          <option value="R_25">Volatility 25 Index</option>
+          <option value="R_50">Volatility 50 Index</option>
+          <option value="R_75">Volatility 75 Index</option>
+          <option value="R_100">Volatility 100 Index</option>
+          <option value="1HZ10V">Volatility 10 (1s)</option>
+          <option value="1HZ25V">Volatility 25 (1s)</option>
+          <option value="1HZ50V">Volatility 50 (1s)</option>
+          <option value="1HZ75V">Volatility 75 (1s)</option>
+          <option value="1HZ100V">Volatility 100 (1s)</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="tickCount"><i class="fas fa-sliders-h"></i> Number of Ticks to Analyze:</label>
+        <input type="number" id="tickCount" value="100" min="10" max="1000">
+      </div>
+      
+      <button onclick="connectWebSocket()" id="connectBtn">
+        <i class="fas fa-play"></i> Start Analysis
+      </button>
+      
+      <div class="loading" id="loadingIndicator">
+        <div class="loading-spinner"></div>
+        <p>Connecting to market data...</p>
+      </div>
+    </div>
+    
+    <div class="stats-container">
+      <div class="stats-card">
+        <div class="stats-title">
+          <i class="fas fa-balance-scale"></i> Even/Odd Distribution
+        </div>
+        <div class="bar-container">
+          <div class="bar even-bar" id="evenBar" style="width: 0%"></div>
+        </div>
+        <div class="bar-value">
+          <span>Even: <span id="evenPercent">0%</span></span>
+          <span>Odd: <span id="oddPercent">0%</span></span>
+        </div>
+      </div>
+      
+      <div class="stats-card">
+        <div class="stats-title">
+          <i class="fas fa-chart-line"></i> Rise/Fall Trend
+        </div>
+        <div class="bar-container">
+          <div class="bar rise-bar" id="riseBar" style="width: 0%"></div>
+        </div>
+        <div class="bar-value">
+          <span>Rise: <span id="risePercent">0%</span></span>
+          <span>Fall: <span id="fallPercent">0%</span></span>
+        </div>
+      </div>
+      
+      <div class="stats-card">
+        <div class="stats-title">
+          <i class="fas fa-info-circle"></i> Market Info
+        </div>
+        <div class="bar-value">
+          <span>Total Ticks: <span id="totalTicks">0</span></span>
+        </div>
+        <div class="bar-value">
+          <span>Current Market: <span id="currentMarket">N/A</span></span>
+        </div>
+      </div>
+    </div>
+    
+    <h2>Digit Frequency Distribution</h2>
+    <div class="circle-container" id="circleContainer"></div>
+    
+    <h2>Recent Tick History</h2>
+    <div class="history-container" id="historyContainer"></div>
+  </div>
+  
+  <button class="theme-toggle" id="themeToggle">
+    <i class="fas fa-moon"></i>
+  </button>
+  
+  <footer>
+    <p>&copy; 2025 Deriv Analysis Tool. All rights reserved.</p>
+  </footer>
+<script src="index.js"></script>
+</body>
+</html>
