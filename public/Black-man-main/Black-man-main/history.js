@@ -1,15 +1,14 @@
 const API_TOKEN = "n6rqpKj9hrdfbiM";
 const APP_ID = "70549";
 let tickHistory = [];
-let ws = null;
+let ws;
 let isDarkMode = false;
 let isPaused = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 3;
 let isHistoryExpanded = false;
-let currentMarket = "";
+let currentMarket = ""; // Added to track current market
 
-// DOM elements
 const DOM = {
   market: document.getElementById('market'),
   tickCount: document.getElementById('ticks'),
@@ -34,7 +33,6 @@ const DOM = {
   themeToggle: document.getElementById('theme-toggle')
 };
 
-// Theme toggle
 function toggleTheme() {
   isDarkMode = !isDarkMode;
   document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
@@ -42,7 +40,6 @@ function toggleTheme() {
   localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
 }
 
-// Error display
 function showError(message) {
   const error = document.createElement('div');
   error.className = 'error-message';
@@ -51,144 +48,114 @@ function showError(message) {
   setTimeout(() => error.remove(), 5000);
 }
 
-// Fetch historical ticks
 async function fetchHistoricalTicks(market, count) {
+  const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
   return new Promise((resolve, reject) => {
-    const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
-    
-    wsHistory.onopen = () => {
-      wsHistory.send(JSON.stringify({ 
-        ticks_history: market, 
-        count, 
-        end: 'latest', 
-        style: 'ticks' 
-      }));
-    };
-    
+    wsHistory.onopen = () => wsHistory.send(JSON.stringify({ ticks_history: market, count, end: 'latest', style: 'ticks' }));
     wsHistory.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.error) {
         showError(data.error.message);
-        wsHistory.close();
         reject(data.error.message);
       } else if (data.history?.prices) {
-        wsHistory.close();
         resolve(data.history.prices);
       }
-    };
-    
-    wsHistory.onerror = (error) => {
       wsHistory.close();
-      showError('Failed to fetch historical data');
-      reject(error);
     };
-    
-    wsHistory.onclose = () => {
-      // Cleanup
+    wsHistory.onerror = () => {
+      showError('Failed to fetch historical data');
+      reject();
     };
   });
 }
 
-// Main WebSocket connection
 async function connectWebSocket() {
   const market = DOM.market.value;
   const tickLimit = parseInt(DOM.tickCount.value);
-  
-  // Store settings
   localStorage.setItem('market', market);
   localStorage.setItem('tickCount', tickLimit);
   currentMarket = market;
 
-  // UI updates
   DOM.connectBtn.disabled = true;
   DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
 
   try {
-    // Clear and fetch historical data
     tickHistory = [];
     const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
     tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
     updateDisplay();
 
-    // Close existing connection if different market
-    if (ws && ws.readyState === WebSocket.OPEN && currentMarket !== market) {
-      ws.close();
-      ws = null;
-    }
-
-    // Establish new connection if needed
+    // Only create new connection if needed
     if (!ws || ws.readyState !== WebSocket.OPEN) {
+      if (ws) ws.close();
       ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
-      
-      ws.onopen = () => {
-        reconnectAttempts = 0;
-        DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
-        DOM.connectBtn.disabled = false;
-        DOM.pauseBtn.disabled = false;
-        ws.send(JSON.stringify({ authorize: API_TOKEN }));
-        ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
-      };
-
-      ws.onmessage = (event) => {
-        if (isPaused) return;
-        const data = JSON.parse(event.data);
-        if (data.error) showError(data.error.message);
-        if (data.tick) processTick(data.tick);
-      };
-
-      ws.onclose = () => {
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-          reconnectAttempts++;
-          setTimeout(connectWebSocket, 2000 * reconnectAttempts);
-        } else {
-          showError('Connection lost');
-          resetUI();
-        }
-      };
-
-      ws.onerror = (error) => {
-        showError('WebSocket error');
-        console.error('WebSocket error:', error);
-      };
     } else {
       // Already connected, just update subscription
       ws.send(JSON.stringify({ forget: currentMarket }));
       ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
-      currentMarket = market;
       DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
       DOM.connectBtn.disabled = false;
       DOM.pauseBtn.disabled = false;
+      return;
     }
+
+    ws.onopen = () => {
+      reconnectAttempts = 0;
+      DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+      DOM.connectBtn.disabled = false;
+      DOM.pauseBtn.disabled = false;
+      ws.send(JSON.stringify({ authorize: API_TOKEN }));
+      ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
+    };
+
+    ws.onmessage = (event) => {
+      if (isPaused) return;
+      const data = JSON.parse(event.data);
+      if (data.error) showError(data.error.message);
+      if (data.tick) processTick(data.tick);
+    };
+
+    ws.onclose = () => {
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        setTimeout(connectWebSocket, 2000 * reconnectAttempts);
+      } else {
+        showError('WebSocket connection lost');
+        resetUI();
+      }
+    };
+
+    ws.onerror = () => showError('WebSocket error');
   } catch (error) {
-    showError('Connection failed');
     resetUI();
   }
 }
 
-// Reset UI state
 function resetUI() {
   DOM.connectBtn.innerHTML = '<i class="fas fa-play"></i> Start';
   DOM.connectBtn.disabled = false;
   DOM.pauseBtn.disabled = true;
 }
 
-// Pause/resume functionality
 function togglePause() {
   isPaused = !isPaused;
   DOM.pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> Resume' : '<i class="fas fa-pause"></i> Pause';
 }
 
-// Full reset
 function resetAnalysis() {
   tickHistory = [];
+  disconnectWebSocket();
+  updateDisplay();
+}
+
+function disconnectWebSocket() {
   if (ws) {
     ws.close();
     ws = null;
   }
-  updateDisplay();
+  resetUI();
 }
 
-// Process incoming ticks
 function processTick(tick) {
   const market = DOM.market.value;
   const priceStr = formatPrice(tick.quote, getVolatility(market));
@@ -201,10 +168,9 @@ function processTick(tick) {
   const tickLimit = parseInt(DOM.tickCount.value);
   if (tickHistory.length > tickLimit) tickHistory.shift();
 
-  updateDisplay(lastDigit);
+  requestAnimationFrame(() => updateDisplay(lastDigit));
 }
 
-// Helper functions
 function extractLastDigit(price, market) {
   const volatility = getVolatility(market);
   const formattedPrice = price.toFixed(getDecimalPlacesFromVolatility(volatility));
@@ -235,7 +201,6 @@ function calculateRiseFall() {
   return { risePercent, fallPercent };
 }
 
-// Update display
 function updateDisplay(lastDigit = null) {
   const total = tickHistory.length;
   DOM.totalTicks.textContent = total;
@@ -250,47 +215,49 @@ function updateDisplay(lastDigit = null) {
 
   const { risePercent, fallPercent } = calculateRiseFall();
 
-  // Update bars and percentages
   DOM.evenBar.style.width = `${evenPercent}%`;
   DOM.oddBar.style.width = `${oddPercent}%`;
+  DOM.oddBar.style.right = '0';
+  DOM.oddBar.style.left = 'auto';
   DOM.evenPercent.textContent = `${evenPercent}%`;
   DOM.oddPercent.textContent = `${oddPercent}%`;
+
   DOM.riseBar.style.width = `${risePercent}%`;
   DOM.fallBar.style.width = `${fallPercent}%`;
+  DOM.fallBar.style.right = '0';
+  DOM.fallBar.style.left = 'auto';
   DOM.risePercent.textContent = `${risePercent}%`;
   DOM.fallPercent.textContent = `${fallPercent}%`;
 
-  // Update circles
   DOM.circleContainer.innerHTML = '';
   const maxCount = Math.max(...counts);
   const minCount = Math.min(...counts.filter(c => c > 0)) || 0;
 
   for (let i = 0; i <= 9; i++) {
     const percent = total ? (counts[i] / total * 100).toFixed(1) : 0;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'circle-wrapper';
+
     const circle = document.createElement('div');
-    circle.className = `circle ${i === lastDigit ? 'current-tick' : ''} ${counts[i] === maxCount ? 'most-frequent' : ''} ${counts[i] === minCount ? 'least-frequent' : ''}`;
+    circle.className = `circle ${i === lastDigit ? 'current-tick' : ''} ${counts[i] === maxCount && total ? 'most-frequent' : ''} ${counts[i] === minCount && total ? 'least-frequent' : ''}`;
     circle.innerText = i;
-    
+
     const stats = document.createElement('div');
     stats.className = 'stats';
     stats.innerText = `${percent}%`;
-    
-    const wrapper = document.createElement('div');
-    wrapper.className = 'circle-wrapper';
+
     wrapper.appendChild(circle);
     wrapper.appendChild(stats);
-    
     DOM.circleContainer.appendChild(wrapper);
   }
 
   updateHistory();
 }
 
-// History management
 function updateHistory() {
   DOM.historyContainer.innerHTML = '';
   const displayCount = isHistoryExpanded ? 100 : 10;
-  tickHistory.slice(-displayCount).reverse().forEach(num => {
+  tickHistory.slice(-displayCount).forEach(num => {
     const item = document.createElement('div');
     item.className = 'history-item';
     item.innerText = num;
@@ -306,29 +273,22 @@ function toggleHistory() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  // Event listeners
   DOM.themeToggle.addEventListener('click', toggleTheme);
-  DOM.connectBtn.addEventListener('click', () => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      resetAnalysis();
-    } else {
-      connectWebSocket();
-    }
-  });
+  DOM.connectBtn.addEventListener('click', connectWebSocket);
   DOM.pauseBtn.addEventListener('click', togglePause);
   DOM.resetBtn.addEventListener('click', resetAnalysis);
   DOM.seeMoreBtn.addEventListener('click', toggleHistory);
 
-  // Market change handler
+  // Handle market changes without reconnecting
   DOM.market.addEventListener('change', () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      // Update subscription without reconnecting
+      // Update subscription to new market
       const newMarket = DOM.market.value;
       ws.send(JSON.stringify({ forget: currentMarket }));
       ws.send(JSON.stringify({ ticks: newMarket, subscribe: 1 }));
       currentMarket = newMarket;
       
-      // Refresh historical data
+      // Refresh historical data for new market
       const tickLimit = parseInt(DOM.tickCount.value);
       fetchHistoricalTicks(newMarket, tickLimit)
         .then(historicalTicks => {
@@ -339,10 +299,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Load saved settings
   const savedMarket = localStorage.getItem('market');
   const savedTickCount = localStorage.getItem('tickCount');
   if (savedMarket) DOM.market.value = savedMarket;
   if (savedTickCount) DOM.tickCount.value = savedTickCount;
+
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
 });
