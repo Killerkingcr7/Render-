@@ -1,41 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DEC Analysis Tool</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Deriv Last Digit Analysis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
       --primary: #4361ee;
       --primary-dark: #3a56d4;
-      --secondary: #3f37c9;
-      --success: #4cc9f0;
-      --danger: #f72585;
-      --warning: #f8961e;
-      --info: #4895ef;
-      --light: #f8f9fa;
-      --dark: #212529;
-      --gray: #6c757d;
       --white: #ffffff;
       --bg-color: #f8fafc;
       --card-bg: #ffffff;
       --text-color: #1e293b;
       --border-color: #e2e8f0;
-      
-      /* Dark mode variables */
-      --dark-bg-color: #0f172a;
-      --dark-card-bg: #1e293b;
-      --dark-text-color: #f8fafc;
-      --dark-border-color: #334155;
+      --highlight-green: #00ff7f;
+      --highlight-red: #ff4d4d;
     }
 
     [data-theme="dark"] {
-      --bg-color: var(--dark-bg-color);
-      --card-bg: var(--dark-card-bg);
-      --text-color: var(--dark-text-color);
-      --border-color: var(--dark-border-color);
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --border-color: #334155;
     }
 
     * {
@@ -48,96 +37,67 @@
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
-      line-height: 1.6;
-      transition: all 0.3s ease;
+      line-height: 1.5;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
     .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
+      max-width: 100%;
+      padding: 10px;
       flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: start;
     }
 
     header {
+      grid-column: 1 / -1;
       text-align: center;
-      margin-bottom: 30px;
-      position: relative;
-    }
-
-    h1, h2, h3 {
-      color: var(--text-color);
-      margin-bottom: 15px;
-      font-weight: 600;
+      margin-bottom: 10px;
     }
 
     h1 {
-      font-size: 2.2rem;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      font-size: 1.5rem;
+      background: linear-gradient(90deg, var(--primary), #3f37c9);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      display: inline-block;
-    }
-
-    h2 {
-      font-size: 1.8rem;
-    }
-
-    h3 {
-      font-size: 1.4rem;
-      color: var(--gray);
-    }
-
-    .last-tick-container {
-      font-size: 1.1rem;
       font-weight: 600;
-      margin: 20px 0;
-      padding: 12px 20px;
+    }
+
+    .controls-container {
       background-color: var(--card-bg);
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      display: inline-block;
-      transition: all 0.3s ease;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .last-tick-container span {
-      color: var(--primary);
+    .form-group {
+      flex: 1;
+      min-width: 150px;
     }
 
-    label {
-      display: block;
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--text-color);
-      margin-bottom: 8px;
-    }
-
-    select, input {
+    select,
+    input {
       width: 100%;
-      max-width: 300px;
-      font-size: 1rem;
-      padding: 12px 15px;
-      margin: 8px 0 20px;
-      border-radius: 10px;
+      padding: 8px;
+      border-radius: 6px;
       border: 2px solid var(--border-color);
       background-color: var(--card-bg);
       color: var(--text-color);
-      transition: all 0.3s ease;
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 1em;
+      font-size: 0.9rem;
     }
 
-    select:focus, input:focus {
+    select:focus,
+    input:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
     }
 
     button {
@@ -145,231 +105,43 @@
       background-color: var(--primary);
       color: var(--white);
       font-weight: 600;
-      font-size: 1rem;
-      padding: 12px 24px;
+      padding: 8px 16px;
       border: none;
-      border-radius: 10px;
-      margin: 10px 0;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      font-size: 0.9rem;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       background-color: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    button:active {
-      transform: translateY(0);
     }
 
     button:disabled {
-      background-color: var(--gray);
+      background-color: #6c757d;
       cursor: not-allowed;
-      transform: none;
     }
 
-    .controls-container {
-      background-color: var(--card-bg);
-      border-radius: 16px;
-      padding: 25px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-    }
-
-    .circle-container {
-      display: flex;
-      justify-content: center;
-      gap: 25px;
-      flex-wrap: wrap;
-      margin: 30px 0;
-      padding: 20px;
-      background-color: var(--card-bg);
-      border-radius: 16px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-    }
-
-    .circle {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: var(--white);
-      background-color: var(--primary);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .circle::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3));
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .circle:hover::before {
-      opacity: 1;
-    }
-
-    .circle.glow {
-      animation: pulse 1.5s infinite;
-      box-shadow: 0 0 20px 5px rgba(67, 97, 238, 0.5);
-      transform: scale(1.1);
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.7); }
-      70% { box-shadow: 0 0 0 15px rgba(67, 97, 238, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0); }
-    }
-
-    .digit-info {
-      font-size: 0.9rem;
-      margin-top: 8px;
-      color: var(--text-color);
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
-
-    .digit-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: all 0.3s ease;
-    }
-
-    .digit-wrapper:hover {
-      transform: translateY(-5px);
-    }
-
-    .history-container {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin: 30px 0;
-      flex-wrap: wrap;
-    }
-
-    .history-item {
-      font-size: 1.1rem;
-      font-weight: bold;
-      padding: 10px 20px;
-      border-radius: 25px;
-      background-color: var(--card-bg);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      color: var(--primary);
-      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    }
-
-    .history-item:hover {
-      background-color: var(--primary);
-      color: var(--white);
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 6px 12px rgba(67, 97, 238, 0.2);
-    }
-
-    /* Stats Bars */
-    .stats-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin: 30px 0;
-    }
-
-    .stats-card {
-      background-color: var(--card-bg);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-    }
-
-    .stats-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .stats-title {
-      font-size: 1rem;
+    .last-tick-container {
       font-weight: 600;
-      margin-bottom: 15px;
-      color: var(--text-color);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .bar-container {
-      height: 20px;
-      width: 100%;
-      background-color: var(--border-color);
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 10px;
-    }
-
-    .bar {
-      height: 100%;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 8px;
-      font-size: 0.7rem;
-      font-weight: bold;
-      color: var(--white);
-      transition: width 0.8s cubic-bezier(0.65, 0, 0.35, 1);
-    }
-
-    .even-bar {
-      background-color: var(--success);
-    }
-
-    .odd-bar {
-      background-color: var(--danger);
-    }
-
-    .rise-bar {
-      background-color: var(--success);
-    }
-
-    .fall-bar {
-      background-color: var(--danger);
-    }
-
-    .bar-value {
-      margin-top: 5px;
+      padding: 8px;
+      background-color: var(--card-bg);
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
       font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--text-color);
-      display: flex;
-      justify-content: space-between;
     }
 
-    /* Navbar */
+    .last-tick-container span {
+      color: var(--primary);
+    }
+
     .navbar {
       background-color: var(--card-bg);
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
-      margin: 20px 0;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin: 15px 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
@@ -378,14 +150,15 @@
     .navbar a {
       color: var(--text-color);
       text-align: center;
-      padding: 14px 20px;
+      padding: 12px 16px;
       text-decoration: none;
       font-weight: 500;
-      transition: all 0.3s ease;
+      transition: color 0.2s ease;
       position: relative;
     }
 
-    .navbar a:hover {
+    .navbar a:hover,
+    .navbar a.active {
       color: var(--primary);
     }
 
@@ -396,31 +169,211 @@
       left: 50%;
       transform: translateX(-50%);
       width: 0;
-      height: 3px;
+      height: 2px;
       background-color: var(--primary);
-      transition: width 0.3s ease;
+      transition: width 0.2s ease;
     }
 
-    .navbar a:hover::after {
-      width: 80%;
-    }
-
-    .navbar a.active {
-      color: var(--primary);
-      font-weight: 600;
-    }
-
+    .navbar a:hover::after,
     .navbar a.active::after {
-      width: 80%;
+      width: 70%;
     }
 
-    /* Theme Toggle */
+    .stats-container {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .stats-card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .bar-container {
+      height: 12px;
+      background-color: var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.6s ease;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .even-bar {
+      background-color: blue
+    }
+
+    .odd-bar {
+      background-color: rgb(225, 25, 25)
+    }
+
+    .rise-bar {
+      background-color: #00cc66;
+    }
+
+    .fall-bar {
+      background-color: #1e71cf;
+    }
+
+    .circle-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      padding: 10px;
+      background-color: var(--card-bg);
+      border-radius: 8px;
+    }
+
+    .circle-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding-bottom: 12px;
+      position: relative;
+    }
+
+    .circle {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--white);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+      font-size: 1rem;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .circle.most-frequent {
+      background: linear-gradient(135deg, var(--highlight-green), #00cc66);
+      transform: scale(1.1);
+      box-shadow: 0 0 12px var(--highlight-green);
+      animation: glow 2s infinite;
+    }
+
+    .circle.least-frequent {
+      background: linear-gradient(135deg, var(--highlight-red), #cc3333);
+      transform: scale(0.9);
+      box-shadow: 0 0 12px var(--highlight-red);
+      animation: glow 2s infinite;
+    }
+
+    .circle.current-tick {
+      border: 3px solid #ffd700;
+      animation: pulse 1.5s infinite;
+    }
+
+    .circle:hover {
+      transform: rotate(5deg) scale(1.05);
+    }
+
+    .circle.current-tick::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 10px solid #ff4d4d;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+      }
+
+      70% {
+        box-shadow: 0 0 0 8px rgba(255, 215, 0, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+      }
+    }
+
+    @keyframes glow {
+      0% {
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 15px rgba(0, 255, 127, 0.5);
+      }
+
+      100% {
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    .circle-wrapper .stats {
+      font-size: 0.7rem;
+      color: var(--text-color);
+    }
+
+    .history-container {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 16px;
+      background-color: var(--card-bg);
+      color: var(--primary);
+      font-size: 0.9rem;
+    }
+
+    .see-more-btn {
+      background-color: var(--primary);
+      color: var(--white);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin: 10px auto;
+      display: block;
+    }
+
+    .see-more-btn:hover {
+      background-color: var(--primary-dark);
+    }
+
     .theme-toggle {
       position: fixed;
-      bottom: 30px;
-      right: 30px;
-      width: 50px;
-      height: 50px;
+      bottom: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background-color: var(--primary);
       color: var(--white);
@@ -428,141 +381,98 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      z-index: 100;
-      transition: all 0.3s ease;
-      border: none;
     }
 
-    .theme-toggle:hover {
-      transform: scale(1.1) rotate(30deg);
+    .error-message {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--highlight-red);
+      color: var(--white);
+      padding: 8px 16px;
+      border-radius: 6px;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
     }
 
-    /* Loading Animation */
-    .loading {
-      display: none;
-      text-align: center;
-      margin: 20px 0;
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(67, 97, 238, 0.2);
-      border-top: 4px solid var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Footer */
     footer {
       text-align: center;
-      padding: 20px;
+      padding: 15px;
       background-color: var(--card-bg);
       color: var(--text-color);
       margin-top: auto;
-      box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
-      .circle {
-        width: 65px;
-        height: 65px;
-        font-size: 1.2rem;
-      }
-      
-      .digit-info {
-        font-size: 0.8rem;
-      }
-      
-      .history-item {
-        font-size: 1rem;
-        padding: 8px 16px;
-      }
-      
-      h1 {
-        font-size: 1.8rem;
-      }
-      
-      h2 {
-        font-size: 1.5rem;
-      }
-      
-      .stats-container {
+      .container {
         grid-template-columns: 1fr;
+        padding: 8px;
+      }
+
+      .circle {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+      }
+
+      .circle-wrapper .stats {
+        font-size: 0.65rem;
+      }
+
+      .circle-container {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      button,
+      select,
+      input {
+        min-height: 40px;
+        font-size: 0.85rem;
       }
     }
 
     @media (max-width: 480px) {
+      h1 {
+        font-size: 1.3rem;
+      }
+
       .circle {
-        width: 55px;
-        height: 55px;
-        font-size: 1rem;
+        width: 35px;
+        height: 35px;
+        font-size: 0.8rem;
       }
-      
-      .digit-info {
-        font-size: 0.7rem;
-      }
-      
-      .history-item {
-        font-size: 0.9rem;
-        padding: 6px 12px;
-      }
-      
-      .controls-container {
-        padding: 15px;
-      }
-      
-      .navbar a {
-        padding: 10px 15px;
-        font-size: 0.9rem;
-      }
-    }
 
-    /* Tooltip */
-    .tooltip {
-      position: relative;
-      display: inline-block;
-    }
+      .circle-container {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+      }
 
-    .tooltip .tooltiptext {
-      visibility: hidden;
-      width: 200px;
-      background-color: var(--dark);
-      color: var(--white);
-      text-align: center;
-      border-radius: 6px;
-      padding: 8px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 0.8rem;
-      font-weight: normal;
-    }
-
-    .tooltip:hover .tooltiptext {
-      visibility: visible;
-      opacity: 1;
+      .stats-container {
+        width: auto;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <header>
-      <h1>DEC Market Analysis</h1>
-      <h3>Last Digit Probability Tool</h3>
-      
+      <h1>Deriv Last Digit Analysis - Historical</h1>
+      <div class="last-tick-container">
+        Last Tick: <span id="last-tick-value">N/A</span> (<span id="last-tick-time"></span>)
+      </div>
       <div class="navbar">
         <a href="History.html" class="active" id="historicalLink">
           <i class="fas fa-chart-line"></i> Historical Analysis
@@ -572,22 +482,16 @@
         </a>
       </div>
     </header>
-    
+
     <div class="controls-container">
-      <!-- Last Tick Display -->
-      <div id="lastTick" class="last-tick-container">
-        <i class="fas fa-sync-alt"></i> Last Tick: <span id="lastTickValue">N/A</span>
-      </div>
-      
-      <!-- Controls -->
       <div class="form-group">
-        <label for="market"><i class="fas fa-chart-pie"></i> Select Market:</label>
-        <select id="market">
-          <option value="R_10">Volatility 10 Index</option>
-          <option value="R_25">Volatility 25 Index</option>
-          <option value="R_50">Volatility 50 Index</option>
-          <option value="R_75">Volatility 75 Index</option>
-          <option value="R_100">Volatility 100 Index</option>
+        <label for="market">Select Market:</label>
+        <select id="market" aria-label="Select market">
+          <option value="R_10">Volatility 10</option>
+          <option value="R_25">Volatility 25</option>
+          <option value="R_50">Volatility 50</option>
+          <option value="R_75">Volatility 75</option>
+          <option value="R_100">Volatility 100</option>
           <option value="1HZ10V">Volatility 10 (1s)</option>
           <option value="1HZ25V">Volatility 25 (1s)</option>
           <option value="1HZ50V">Volatility 50 (1s)</option>
@@ -595,80 +499,57 @@
           <option value="1HZ100V">Volatility 100 (1s)</option>
         </select>
       </div>
-      
       <div class="form-group">
-        <label for="tickCount"><i class="fas fa-sliders-h"></i> Number of Ticks to Analyze:</label>
-        <input type="number" id="tickCount" value="100" min="10" max="1000">
+        <label for="ticks">Ticks to analyze:</label>
+        <input type="number" id="ticks" value="100" min="10" max="1000" aria-label="Number of ticks">
       </div>
-      
-      <button onclick="connectWebSocket()" id="connectBtn">
-        <i class="fas fa-play"></i> Start Analysis
-      </button>
-      
-      <div class="loading" id="loadingIndicator">
-        <div class="loading-spinner"></div>
-        <p>Connecting to market data...</p>
+      <div class="form-group">
+        <button id="connect-btn"><i class="fa fa-play"></i> Start</button>
+        <button id="pause-btn" disabled><i class="fa fa-pause"></i> Pause</button>
+        <button id="reset-btn"><i class="fas fa-undo"></i> Reset</button>
       </div>
     </div>
-    
-    <!-- Stats Cards -->
+
+    <div id="circle-container" class="circle-container"></div>
+
     <div class="stats-container">
       <div class="stats-card">
-        <div class="stats-title">
-          <i class="fas fa-balance-scale"></i> Even/Odd Distribution
-        </div>
+        <h3>Even/odd</h3>
         <div class="bar-container">
-          <div class="bar even-bar" id="evenBar" style="width: 0%"></div>
+          <div class="bar even-bar" id="even-bar"></div>
+          <div class="bar odd-bar" id="odd-bar"></div>
         </div>
-        <div class="bar-value">
-          <span>Even: <span id="evenPercent">0%</span></span>
-          <span>Odd: <span id="oddPercent">0%</span></span>
-        </div>
+        <div>Even: <span id="even-%">0%</span> | Odd: <span id="odd-%">0%</span></div>
       </div>
-      
       <div class="stats-card">
-        <div class="stats-title">
-          <i class="fas fa-chart-line"></i> Rise/Fall Trend
-        </div>
+        <h3>Rise/Fall</h3>
         <div class="bar-container">
-          <div class="bar rise-bar" id="riseBar" style="width: 0%"></div>
+          <div class="bar rise-bar" id="rise-bar"></div>
+          <div class="bar fall-bar" id="fall-bar"></div>
         </div>
-        <div class="bar-value">
-          <span>Rise: <span id="risePercent">0%</span></span>
-          <span>Fall: <span id="fallPercent">0%</span></span>
-        </div>
+        <div>Rise: <span id="rise-%">0%</span> | Fall: <span id="fall-%">0%</span></div>
       </div>
-      
       <div class="stats-card">
-        <div class="stats-title">
-          <i class="fas fa-info-circle"></i> Market Info
-        </div>
-        <div class="bar-value">
-          <span>Total Ticks: <span id="totalTicks">0</span></span>
-        </div>
-        <div class="bar-value">
-          <span>Current Market: <span id="currentMarket">N/A</span></span>
-        </div>
+        <h3>Market info</h3>
+        <div>Total Ticks: <span id="total-ticks">0</span></div>
+        <div>Market: <span id="current-market">N/A</span></div>
       </div>
     </div>
-    
-    <!-- Digit Circles -->
-    <h2>Digit Frequency Distribution</h2>
-    <div class="circle-container" id="circleContainer"></div>
-    
-    <!-- History -->
-    <h2>Recent Tick History</h2>
-    <div class="history-container" id="historyContainer"></div>
+
+    <h2>Recent Ticks</h2>
+    <div id="history-container" class="history-container"></div>
+    <button id="see-more-btn" class="see-more-btn">See More (Last 100 Digits)</button>
   </div>
-  
-  <button class="theme-toggle" id="themeToggle">
+
+  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
     <i class="fas fa-moon"></i>
   </button>
-  
+
   <footer>
-    <p>&copy; 2025 DEC Analysis Tool. All rights reserved.</p>
+    <p>© 2025 Deriv Analysis Tool</p>
   </footer>
 
-<script src="history.js"></script>
+  <script src="history.js"></script>
 </body>
+
 </html>
