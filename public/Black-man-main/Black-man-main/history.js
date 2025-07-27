@@ -8,6 +8,7 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 3;
 let isHistoryExpanded = false;
 let currentMarket = "";
+let isFirstConnection = true;
 
 const DOM = {
   market: document.getElementById('market'),
@@ -49,33 +50,108 @@ function showError(message) {
 }
 
 async function fetchHistoricalTicks(market, count) {
-  const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
   return new Promise((resolve, reject) => {
-    wsHistory.onopen = () => wsHistory.send(JSON.stringify({ ticks_history: market, count, end: 'latest', style: 'ticks' }));
+    const wsHistory = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
+    
+    wsHistory.onopen = () => {
+      wsHistory.send(JSON.stringify({ 
+        ticks_history: market, 
+        count, 
+        end: 'latest', 
+        style: 'ticks' 
+      }));
+    };
+    
     wsHistory.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.error) {
         showError(data.error.message);
+        wsHistory.close();
         reject(data.error.message);
       } else if (data.history?.prices) {
+        wsHistory.close();
         resolve(data.history.prices);
       }
-      wsHistory.close();
     };
-    wsHistory.onerror = () => {
+    
+    wsHistory.onerror = (error) => {
+      wsHistory.close();
       showError('Failed to fetch historical data');
-      reject();
+      reject(error);
     };
   });
 }
 
+async function initializeConnection() {
+  const market = DOM.market.value;
+  const tickLimit = parseInt(DOM.tickCount.value);
+  
+  localStorage.setItem('market', market);
+  localStorage.setItem('tickCount', tickLimit);
+  currentMarket = market;
+
+  DOM.connectBtn.disabled = true;
+  DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+
+  try {
+    // Clear and fetch historical data
+    tickHistory = [];
+    const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
+    tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
+    updateDisplay();
+
+    // Create new WebSocket connection
+    ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
+    
+    ws.onopen = () => {
+      reconnectAttempts = 0;
+      isFirstConnection = false;
+      DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+      DOM.connectBtn.disabled = false;
+      DOM.pauseBtn.disabled = false;
+      
+      // Authorize and subscribe
+      ws.send(JSON.stringify({ authorize: API_TOKEN }));
+      ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
+    };
+
+    ws.onmessage = (event) => {
+      if (isPaused) return;
+      const data = JSON.parse(event.data);
+      if (data.error) {
+        showError(data.error.message);
+      } else if (data.tick) {
+        processTick(data.tick);
+      }
+    };
+
+    ws.onclose = () => {
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        setTimeout(initializeConnection, 2000 * reconnectAttempts);
+      } else {
+        showError('Connection lost');
+        resetUI();
+      }
+    };
+
+    ws.onerror = (error) => {
+      showError('WebSocket error: ' + error.message);
+    };
+
+  } catch (error) {
+    showError('Initialization failed: ' + error.message);
+    resetUI();
+  }
+}
+
 function switchMarket(newMarket) {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
-    connectWebSocket();
+    initializeConnection();
     return;
   }
 
-  // Unsubscribe from current market first
+  // Unsubscribe from current market
   ws.send(JSON.stringify({ forget: currentMarket }));
   
   // Subscribe to new market
@@ -90,66 +166,6 @@ function switchMarket(newMarket) {
       updateDisplay();
     })
     .catch(() => showError('Failed to load history'));
-}
-
-async function connectWebSocket() {
-  const market = DOM.market.value;
-  const tickLimit = parseInt(DOM.tickCount.value);
-  localStorage.setItem('market', market);
-  localStorage.setItem('tickCount', tickLimit);
-  currentMarket = market;
-
-  DOM.connectBtn.disabled = true;
-  DOM.connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
-
-  try {
-    tickHistory = [];
-    const historicalTicks = await fetchHistoricalTicks(market, tickLimit);
-    tickHistory = historicalTicks.map(price => extractLastDigit(price, market));
-    updateDisplay();
-
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      switchMarket(market);
-      DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
-      DOM.connectBtn.disabled = false;
-      DOM.pauseBtn.disabled = false;
-      return;
-    }
-
-    if (ws) ws.close();
-    ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
-
-    ws.onopen = () => {
-      reconnectAttempts = 0;
-      DOM.connectBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
-      DOM.connectBtn.disabled = false;
-      DOM.pauseBtn.disabled = false;
-      ws.send(JSON.stringify({ authorize: API_TOKEN }));
-      ws.send(JSON.stringify({ ticks: market, subscribe: 1 }));
-    };
-
-    ws.onmessage = (event) => {
-      if (isPaused) return;
-      const data = JSON.parse(event.data);
-      if (data.error) showError(data.error.message);
-      if (data.tick) processTick(data.tick);
-    };
-
-    ws.onclose = () => {
-      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-        reconnectAttempts++;
-        setTimeout(connectWebSocket, 2000 * reconnectAttempts);
-      } else {
-        showError('WebSocket connection lost');
-        resetUI();
-      }
-    };
-
-    ws.onerror = () => showError('WebSocket error');
-  } catch (error) {
-    showError('Connection failed: ' + error.message);
-    resetUI();
-  }
 }
 
 function resetUI() {
@@ -171,6 +187,9 @@ function resetAnalysis() {
 
 function disconnectWebSocket() {
   if (ws) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ forget: currentMarket }));
+    }
     ws.close();
     ws = null;
   }
@@ -189,7 +208,7 @@ function processTick(tick) {
   const tickLimit = parseInt(DOM.tickCount.value);
   if (tickHistory.length > tickLimit) tickHistory.shift();
 
-  requestAnimationFrame(() => updateDisplay(lastDigit));
+  updateDisplay(lastDigit);
 }
 
 function extractLastDigit(price, market) {
@@ -238,15 +257,10 @@ function updateDisplay(lastDigit = null) {
 
   DOM.evenBar.style.width = `${evenPercent}%`;
   DOM.oddBar.style.width = `${oddPercent}%`;
-  DOM.oddBar.style.right = '0';
-  DOM.oddBar.style.left = 'auto';
   DOM.evenPercent.textContent = `${evenPercent}%`;
   DOM.oddPercent.textContent = `${oddPercent}%`;
-
   DOM.riseBar.style.width = `${risePercent}%`;
   DOM.fallBar.style.width = `${fallPercent}%`;
-  DOM.fallBar.style.right = '0';
-  DOM.fallBar.style.left = 'auto';
   DOM.risePercent.textContent = `${risePercent}%`;
   DOM.fallPercent.textContent = `${fallPercent}%`;
 
@@ -256,19 +270,19 @@ function updateDisplay(lastDigit = null) {
 
   for (let i = 0; i <= 9; i++) {
     const percent = total ? (counts[i] / total * 100).toFixed(1) : 0;
-    const wrapper = document.createElement('div');
-    wrapper.className = 'circle-wrapper';
-
     const circle = document.createElement('div');
-    circle.className = `circle ${i === lastDigit ? 'current-tick' : ''} ${counts[i] === maxCount && total ? 'most-frequent' : ''} ${counts[i] === minCount && total ? 'least-frequent' : ''}`;
+    circle.className = `circle ${i === lastDigit ? 'current-tick' : ''} ${counts[i] === maxCount ? 'most-frequent' : ''} ${counts[i] === minCount ? 'least-frequent' : ''}`;
     circle.innerText = i;
-
+    
     const stats = document.createElement('div');
     stats.className = 'stats';
     stats.innerText = `${percent}%`;
-
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'circle-wrapper';
     wrapper.appendChild(circle);
     wrapper.appendChild(stats);
+    
     DOM.circleContainer.appendChild(wrapper);
   }
 
@@ -278,7 +292,7 @@ function updateDisplay(lastDigit = null) {
 function updateHistory() {
   DOM.historyContainer.innerHTML = '';
   const displayCount = isHistoryExpanded ? 100 : 10;
-  tickHistory.slice(-displayCount).forEach(num => {
+  tickHistory.slice(-displayCount).reverse().forEach(num => {
     const item = document.createElement('div');
     item.className = 'history-item';
     item.innerText = num;
@@ -294,29 +308,32 @@ function toggleHistory() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  // Event listeners
   DOM.themeToggle.addEventListener('click', toggleTheme);
   DOM.connectBtn.addEventListener('click', () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       disconnectWebSocket();
     } else {
-      connectWebSocket();
+      initializeConnection();
     }
   });
   DOM.pauseBtn.addEventListener('click', togglePause);
   DOM.resetBtn.addEventListener('click', resetAnalysis);
   DOM.seeMoreBtn.addEventListener('click', toggleHistory);
 
-  // Handle market changes
+  // Market change handler
   DOM.market.addEventListener('change', () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       switchMarket(DOM.market.value);
+    } else if (!isFirstConnection) {
+      initializeConnection();
     }
   });
 
+  // Load saved settings
   const savedMarket = localStorage.getItem('market');
   const savedTickCount = localStorage.getItem('tickCount');
   if (savedMarket) DOM.market.value = savedMarket;
   if (savedTickCount) DOM.tickCount.value = savedTickCount;
-
   if (localStorage.getItem('theme') === 'dark') toggleTheme();
 });
