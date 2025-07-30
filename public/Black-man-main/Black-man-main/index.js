@@ -69,6 +69,11 @@
     }
   
     async function connectWebSocket() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        disconnectWebSocket();
+        return;
+      }
+
       const market = DOM.market.value;
       const tickLimit = parseInt(DOM.tickCount.value);
       localStorage.setItem('market', market);
@@ -101,18 +106,18 @@
           if (data.tick) processTick(data.tick);
         };
 
-        ws.onclose = () => {
-          if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        ws.onclose = (event) => {
+          if (!event.wasClean && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttempts++;
             setTimeout(connectWebSocket, 2000 * reconnectAttempts);
           } else {
-            showError('WebSocket connection lost');
             resetUI();
           }
         };
 
         ws.onerror = () => showError('WebSocket error');
       } catch (error) {
+        showError('Connection failed: ' + error.message);
         resetUI();
       }
     }
@@ -135,14 +140,19 @@
     }
 
     function disconnectWebSocket() {
-      if (ws) ws.close();
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
       resetUI();
     }
   
     function processTick(tick) {
       const market = DOM.market.value;
-      const priceStr = formatPrice(tick.quote, getVolatility(market));
-      const lastDigit = parseInt(priceStr.match(/\.(\d+)$/)?.[1].slice(-1) || priceStr.slice(-1));
+      const volatility = getVolatility(market);
+      const decimalPlaces = getDecimalPlacesFromVolatility(volatility);
+      const priceStr = tick.quote.toFixed(decimalPlaces);
+      const lastDigit = parseInt(priceStr.slice(-1));
 
       DOM.lastTickValue.textContent = priceStr;
       DOM.lastTickTime.textContent = new Date().toLocaleTimeString();
@@ -165,11 +175,15 @@
     }
 
     function getVolatility(market) {
-      return { R_10: '10', R_25: '25', R_50: '50', R_75: '75', R_100: '100' }[market] || '100';
+      const volatilityMap = {
+        'R_10': 10, 'R_25': 25, 'R_50': 50, 'R_75': 75, 'R_100': 100,
+        '1HZ10V': 10, '1HZ25V': 25, '1HZ50V': 50, '1HZ75V': 75, '1HZ100V': 100
+      };
+      return volatilityMap[market] || 100;
     }
 
     function getDecimalPlacesFromVolatility(volatility) {
-      return { '10': 3, '25': 3, '50': 4, '75': 4 }[volatility] || 2;
+      return volatility >= 100 ? 2 : 3;
     }
 
     function calculateRiseFall() {
@@ -272,5 +286,7 @@
       if (savedTickCount) DOM.tickCount.value = savedTickCount;
 
       if (localStorage.getItem('theme') === 'dark') toggleTheme();
-      connectWebSocket();
+      
+      // Initialize display
+      updateDisplay();
     });

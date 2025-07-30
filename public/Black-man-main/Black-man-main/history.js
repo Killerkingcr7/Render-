@@ -136,7 +136,7 @@ function switchMarket(newMarket) {
   ws.send(JSON.stringify({ forget: currentMarket }));
   ws.send(JSON.stringify({ ticks: newMarket, subscribe: 1 }));
   currentMarket = newMarket;
-  
+
   const tickLimit = parseInt(DOM.tickCount.value);
   fetchHistoricalTicks(newMarket, tickLimit)
     .then(historicalTicks => {
@@ -175,9 +175,160 @@ function disconnectWebSocket() {
   resetUI();
 }
 
-// ... (keep all other functions exactly the same: processTick, extractLastDigit, formatPrice, 
-// getVolatility, getDecimalPlacesFromVolatility, calculateRiseFall, updateDisplay, 
-// updateHistory, toggleHistory)
+function processTick(tick) {
+  const lastDigit = extractLastDigit(tick.quote, currentMarket);
+  tickHistory.push(lastDigit);
+
+  // Keep only the specified number of ticks
+  const tickLimit = parseInt(DOM.tickCount.value);
+  if (tickHistory.length > tickLimit) {
+    tickHistory.shift();
+  }
+
+  updateDisplay();
+}
+
+function extractLastDigit(price, market) {
+  const volatility = getVolatility(market);
+  const decimalPlaces = getDecimalPlacesFromVolatility(volatility);
+  const formattedPrice = formatPrice(price, decimalPlaces);
+  return parseInt(formattedPrice.slice(-1));
+}
+
+function formatPrice(price, decimalPlaces) {
+  return parseFloat(price).toFixed(decimalPlaces);
+}
+
+function getVolatility(market) {
+  const volatilityMap = {
+    'R_10': 10, 'R_25': 25, 'R_50': 50, 'R_75': 75, 'R_100': 100,
+    '1HZ10V': 10, '1HZ25V': 25, '1HZ50V': 50, '1HZ75V': 75, '1HZ100V': 100
+  };
+  return volatilityMap[market] || 10;
+}
+
+function getDecimalPlacesFromVolatility(volatility) {
+  return volatility >= 100 ? 2 : 3;
+}
+
+function calculateRiseFall() {
+  if (tickHistory.length < 2) return { rise: 0, fall: 0 };
+
+  let rise = 0, fall = 0;
+  for (let i = 1; i < tickHistory.length; i++) {
+    if (tickHistory[i] > tickHistory[i - 1]) rise++;
+    else if (tickHistory[i] < tickHistory[i - 1]) fall++;
+  }
+
+  return { rise, fall };
+}
+
+function updateDisplay() {
+  if (tickHistory.length === 0) return;
+
+  // Update last tick info
+  const lastTick = tickHistory[tickHistory.length - 1];
+  DOM.lastTickValue.textContent = lastTick;
+  DOM.lastTickTime.textContent = new Date().toLocaleTimeString();
+  DOM.totalTicks.textContent = tickHistory.length;
+  DOM.currentMarket.textContent = DOM.market.options[DOM.market.selectedIndex].text;
+
+  // Calculate statistics
+  const digitCounts = Array(10).fill(0);
+  let evenCount = 0, oddCount = 0;
+
+  tickHistory.forEach(digit => {
+    digitCounts[digit]++;
+    if (digit % 2 === 0) evenCount++;
+    else oddCount++;
+  });
+
+  // Update even/odd bars
+  const evenPercent = (evenCount / tickHistory.length * 100).toFixed(1);
+  const oddPercent = (oddCount / tickHistory.length * 100).toFixed(1);
+  DOM.evenBar.style.width = evenPercent + '%';
+  DOM.oddBar.style.width = oddPercent + '%';
+  DOM.evenPercent.textContent = evenPercent + '%';
+  DOM.oddPercent.textContent = oddPercent + '%';
+
+  // Update rise/fall bars
+  const { rise, fall } = calculateRiseFall();
+  const total = rise + fall;
+  if (total > 0) {
+    const risePercent = (rise / total * 100).toFixed(1);
+    const fallPercent = (fall / total * 100).toFixed(1);
+    DOM.riseBar.style.width = risePercent + '%';
+    DOM.fallBar.style.width = fallPercent + '%';
+    DOM.risePercent.textContent = risePercent + '%';
+    DOM.fallPercent.textContent = fallPercent + '%';
+  }
+
+  // Update digit circles
+  updateDigitCircles(digitCounts);
+
+  // Update history display
+  updateHistory();
+}
+
+function updateDigitCircles(digitCounts) {
+  DOM.circleContainer.innerHTML = '';
+
+  const maxCount = Math.max(...digitCounts);
+  const minCount = Math.min(...digitCounts.filter(count => count > 0));
+  const lastDigit = tickHistory[tickHistory.length - 1];
+
+  for (let i = 0; i <= 9; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'circle-wrapper';
+
+    const circle = document.createElement('div');
+    circle.className = 'circle';
+    circle.textContent = i;
+
+    // Highlight most/least frequent
+    if (digitCounts[i] === maxCount && maxCount > 0) {
+      circle.classList.add('most-frequent');
+    } else if (digitCounts[i] === minCount && minCount > 0 && minCount < maxCount) {
+      circle.classList.add('least-frequent');
+    }
+
+    // Highlight current tick
+    if (i === lastDigit) {
+      circle.classList.add('current-tick');
+    }
+
+    const stats = document.createElement('div');
+    stats.className = 'stats';
+    const percentage = tickHistory.length > 0 ? (digitCounts[i] / tickHistory.length * 100).toFixed(1) : '0.0';
+    stats.textContent = `${digitCounts[i]} (${percentage}%)`;
+
+    wrapper.appendChild(circle);
+    wrapper.appendChild(stats);
+    DOM.circleContainer.appendChild(wrapper);
+  }
+}
+
+function updateHistory() {
+  const displayCount = isHistoryExpanded ? tickHistory.length : Math.min(20, tickHistory.length);
+  const recentTicks = tickHistory.slice(-displayCount).reverse();
+
+  DOM.historyContainer.innerHTML = '';
+  recentTicks.forEach(digit => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.textContent = digit;
+    DOM.historyContainer.appendChild(item);
+  });
+
+  DOM.seeMoreBtn.textContent = isHistoryExpanded ?
+    'See Less' :
+    `See More (Last ${tickHistory.length} Digits)`;
+}
+
+function toggleHistory() {
+  isHistoryExpanded = !isHistoryExpanded;
+  updateHistory();
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
