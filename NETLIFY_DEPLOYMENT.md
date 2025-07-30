@@ -18,7 +18,7 @@ Your domain `dectrading.netlify.app` is already configured in the code. Here's h
    ```bash
    git init
    git add .
-   git commit -m "Initial commit - Deriv Bot with App ID 85159"
+   git commit -m "Initial commit - Deriv Bot with App ID 88245"
    git branch -M main
    git remote add origin https://github.com/yourusername/deriv-bot.git
    git push -u origin main
@@ -118,13 +118,13 @@ npm run start
 
 ### Step 3: Configure Domain
 - Your site will be available at `dectrading.netlify.app`
-- Commission tracking with App ID 85159 is active
+- Commission tracking with App ID 88245 is active
 - All trades generate revenue for you
 
 ## 📊 Post-Deployment Checklist
 
 - [ ] Site loads at `dectrading.netlify.app`
-- [ ] Browser console shows "Using App ID: 85159"
+- [ ] Browser console shows "Using App ID: 88245"
 - [ ] Login/logout works
 - [ ] Bot builder loads
 - [ ] Charts display correctly
@@ -147,7 +147,7 @@ npm run build
 - Test API connections
 
 ### Commission Not Tracking
-- Verify App ID 85159 in console
+- Verify App ID 88245 in console
 - Check Deriv Partner dashboard
 - Ensure users are trading (not just browsing)
 
@@ -164,7 +164,7 @@ Netlify automatically provides:
 
 Once deployed:
 1. **Users visit**: `dectrading.netlify.app`
-2. **App ID 85159**: Automatically used
+2. **App ID 88245**: Automatically used
 3. **Trading activity**: Tracked in real-time
 4. **Commissions**: Appear in Deriv Partner Hub
 5. **Revenue**: Generated from user trading volume
@@ -182,7 +182,7 @@ Once deployed:
 ## 🚀 Ready to Deploy!
 
 Your Deriv Bot is fully configured for Netlify with:
-- ✅ App ID 85159 for commission tracking
+- ✅ App ID 88245 for commission tracking
 - ✅ Domain: dectrading.netlify.app
 - ✅ Production-ready build configuration
 - ✅ Security headers and optimizations
