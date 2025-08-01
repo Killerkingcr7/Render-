@@ -36,7 +36,7 @@ const BotBuilderTourMobile = observer(() => {
         if (tour_step === 2) toggleTourLoadModal(true);
         else if (active_tour !== '') toggleTourLoadModal(false);
         const token = getSetting('bot_builder_token');
-        if (!token && active_tab === 1) {
+        if (!token && active_tab === 2) {
             if (is_open) {
                 setTourDialogVisibility(false);
             } else {

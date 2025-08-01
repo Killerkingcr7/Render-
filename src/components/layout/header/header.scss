@@ -382,6 +382,36 @@
     }
 }
 
+.disclaimer-button {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    border: none;
+    border-radius: 20px;
+    color: var(--text-colored-background);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    margin: 0 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+
+    &:hover {
+        background: linear-gradient(135deg, #e55a2b 0%, #e0841a 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    @include mobile-or-tablet-screen {
+        font-size: 12px;
+        padding: 6px 12px;
+        margin: 0 4px;
+    }
+}
+
 .social-links-modal {
     padding: 2rem;
     display: flex;

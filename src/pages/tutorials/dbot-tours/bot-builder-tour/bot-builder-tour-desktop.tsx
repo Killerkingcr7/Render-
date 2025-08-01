@@ -14,7 +14,7 @@ const BotBuilderTourDesktop = observer(() => {
     const { active_tab, active_tour, setActiveTour, setTourDialogVisibility } = dashboard;
     const { is_load_modal_open } = load_modal;
     const token = getSetting('bot_builder_token');
-    if (!token && active_tab === 1) setTourDialogVisibility(true);
+    if (!token && active_tab === 2) setTourDialogVisibility(true);
 
     React.useEffect(() => {
         if (is_finished) {

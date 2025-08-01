@@ -6,19 +6,12 @@ import Button from '@/components/shared_ui/button';
 import Input from '@/components/shared_ui/input';
 import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
 import Modal from '@/components/shared_ui/modal';
-import RadioGroup from '@/components/shared_ui/radio-group';
 import Text from '@/components/shared_ui/text';
 import ThemedScrollbars from '@/components/shared_ui/themed-scrollbars';
-import { config, save_types } from '@/external/bot-skeleton';
+import { config } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
-import {
-    DerivLightGoogleDriveIcon,
-    DerivLightLocalDeviceIcon,
-    DerivLightMyComputerIcon,
-} from '@deriv/quill-icons/Illustration';
 import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
-import IconRadio from './icon-radio';
 import './save-modal.scss';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
 import Hex from 'crypto-js/enc-hex';
@@ -123,7 +116,7 @@ const SaveModal = observer(() => {
     const { active_tab } = dashboard;
 
     useEffect(() => {
-        if (active_tab === 1) {
+        if (active_tab === 2) {
             updateBotName(dashboard_strategies?.[0]?.name ?? '');
         }
     }, [active_tab, dashboard_strategies, updateBotName]);
