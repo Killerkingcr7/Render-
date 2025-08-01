@@ -94,9 +94,6 @@ const AppWrapper = observer(() => {
 
 
     const [bots, setBots] = useState([]);
-    const [analysisToolUrl, setAnalysisToolUrl] = useState('ai');
-
-    const isAnalysisToolActive = active_tab === ANALYSIS_TOOL;
 
     useEffect(() => {
         if (connectionStatus !== CONNECTION_STATUS.OPENED) {
@@ -146,10 +143,7 @@ const AppWrapper = observer(() => {
         fetchBots();
     }, []);
 
-    const runBot = (xmlContent: string) => {
-        updateWorkspaceName(xmlContent);
-        console.log('Running bot with content:', xmlContent);
-    };
+
 
     const handleTabChange = React.useCallback(
         (tab_index: number) => {
@@ -185,9 +179,7 @@ const AppWrapper = observer(() => {
         setActiveTab(DBOT_TABS.BOT_BUILDER);
     }, [load_modal, setActiveTab]);
 
-    const toggleAnalysisTool = (url: string) => {
-        setAnalysisToolUrl(url);
-    };
+
 
     const showRunPanel = [DBOT_TABS.BOT_BUILDER, DBOT_TABS.CHART, DBOT_TABS.ANALYSIS_TOOL, DBOT_TABS.SIGNALS].includes(active_tab);
 
@@ -201,7 +193,7 @@ const AppWrapper = observer(() => {
                             <Dashboard handleTabChange={handleTabChange} />
                             <button onClick={handleOpen}>Load Bot</button>
                         </div>
-                        
+
                         {/* Free Bots Tab - Second */}
                         <div label={<><FreeBotsIcon /><Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'>
                             <div className='free-bots'>
@@ -222,17 +214,17 @@ const AppWrapper = observer(() => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Bot Builder Tab - Third */}
                         <div label={<><BotBuilderIcon /><Localize i18n_default_text='Bot Builder' /></>} id='id-bot-builder' />
-                        
+
                         {/* Charts Tab - Fourth */}
                         <div label={<><ChartsIcon /><Localize i18n_default_text='Charts' /></>} id='id-charts'>
                             <Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}>
                                 <Chart show_digits_stats={false} />
                             </Suspense>
                         </div>
-                        
+
                         {/* Analysis Tool Tab - Fifth */}
                         <div label={<><AnalysisToolIcon /><Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'>
                             <div className={classNames('dashboard__chart-wrapper', {
@@ -248,7 +240,7 @@ const AppWrapper = observer(() => {
                                 />
                             </div>
                         </div>
-                        
+
                         {/* The rest of the tabs follow in their original order */}
                         <div label={<><TutorialsIcon /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'>
                             <Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}>
