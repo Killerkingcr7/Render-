@@ -1,14 +1,14 @@
 # Commission Setup Complete ✅
 
 ## Your Configuration
-- **App ID**: 88245
+- **App ID**: 85159
 - **Domain**: dectrading.netlify.app
 - **Commission Tracking**: ENABLED
 
 ## Files Modified
 
 ### 1. `/src/components/shared/utils/config/config.ts`
-- ✅ Updated APP_IDS to use your app ID (88245)
+- ✅ Updated APP_IDS to use your app ID (85159)
 - ✅ Added your domain to domain_app_ids mapping
 - ✅ Updated getAppId() fallback to use your app ID
 
@@ -29,7 +29,7 @@
 
 When users trade through your platform at `dectrading.netlify.app`:
 
-1. **App ID 88245** is automatically used for all API connections
+1. **App ID 85159** is automatically used for all API connections
 2. **All trades** are attributed to your app ID
 3. **Commission tracking** happens automatically via Deriv's system
 4. **Revenue** is tracked in your Deriv Partner dashboard
@@ -44,7 +44,7 @@ When users trade through your platform at `dectrading.netlify.app`:
 
 2. **Test the Setup**:
    - Visit your deployed site
-   - Check browser console for "Using App ID: 88245"
+   - Check browser console for "Using App ID: 85159"
    - Test with demo account first
 
 3. **Monitor Commissions**:
@@ -54,7 +54,7 @@ When users trade through your platform at `dectrading.netlify.app`:
 
 ## Revenue Streams
 
-With App ID 88245, you earn from:
+With App ID 85159, you earn from:
 - **Trading Volume**: Percentage of user trading volume
 - **Spread Revenue**: Share of Deriv's spread profits
 - **Active Traders**: Bonuses for bringing active users
@@ -76,5 +76,5 @@ If you need help:
 ---
 **Status**: ✅ READY FOR DEPLOYMENT
 **Commission Tracking**: ✅ ACTIVE
-**App ID**: 88245
+**App ID**: 85159
 **Domain**: dectrading.netlify.app

@@ -5,8 +5,7 @@ import { getInitialLanguage } from '@deriv-com/translations';
 import APIMiddleware from './api-middleware';
 
 export const generateDerivApiInstance = () => {
-    const cleanedServer = getSocketURL().replace(/[^a-zA-Z0-9.]/g, '');
-    const cleanedAppId = getAppId() || '88245';
+    const cleanedAppId = getAppId() || '85159';
     const socket_url = `wss://ws.binaryws.com/websockets/v3?app_id=${cleanedAppId}&l=${getInitialLanguage()}&brand=${website_name.toLowerCase()}`;
     const deriv_socket = new WebSocket(socket_url);
     const deriv_api = new DerivAPIBasic({
