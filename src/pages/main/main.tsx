@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect, useState, useCallback } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
+
 import ChunkLoader from '@/components/loader/chunk-loader';
 import DesktopWrapper from '@/components/shared_ui/desktop-wrapper';
 import Dialog from '@/components/shared_ui/dialog';
@@ -10,6 +11,7 @@ import TradingViewModal from '@/components/trading-view-chart/trading-view-modal
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { api_base, updateWorkspaceName } from '@/external/bot-skeleton';
 import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
+
 import { useApiBase } from '@/hooks/useApiBase';
 import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
@@ -21,7 +23,6 @@ import RunStrategy from '../dashboard/run-strategy';
 
 const Chart = lazy(() => import('../chart'));
 const Tutorial = lazy(() => import('../tutorials'));
-const BotBuilder = lazy(() => import('../bot-builder'));
 
 const DashboardIcon = () => (
     <svg width="20" height="20" fill="var(--text-general)" viewBox="0 0 24 24">
@@ -70,28 +71,11 @@ const FreeBotsIcon = () => (
     <svg fill="var(--text-general)" width="20px" height="20px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1"><path d="M10,13H4a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1V14A1,1,0,0,0,10,13ZM9,19H5V15H9ZM20,3H14a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1V4A1,1,0,0,0,20,3ZM19,9H15V5h4Zm1,7H18V14a1,1,0,0,0-2,0v2H14a1,1,0,0,0,0,2h2v2a1,1,0,0,0,2,0V18h2a1,1,0,0,0,0-2ZM10,3H4A1,1,0,0,0,3,4v6a1,1,0,0,0,1,1h6a1,1,0,0,0,1-1V4A1,1,0,0,0,10,3ZM9,9H5V5H9Z" /></svg>
 );
 
-const BulkTradingIcon = () => (
-    <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 7H21L19 2H5L3 7Z" stroke="var(--text-general)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M3 7L5 22H19L21 7" stroke="var(--text-general)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M9 11V15" stroke="var(--text-general)" stroke-width="2" stroke-linecap="round"/>
-        <path d="M15 11V15" stroke="var(--text-general)" stroke-width="2" stroke-linecap="round"/>
-        <path d="M12 9V17" stroke="var(--text-general)" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-);
-
 const BotIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="var(--text-general)" />
     </svg>
 );
-
-interface Bot {
-    title: string;
-    image: string;
-    filePath: string;
-    xmlContent: string;
-}
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -101,13 +85,18 @@ const AppWrapper = observer(() => {
         is_chart_modal_visible,
         setActiveTab,
     } = dashboard;
-
+    const { onEntered } = load_modal;
     const { is_dialog_open, dialog_options, onCancelButtonClick, onCloseDialog, onOkButtonClick, stopBot, is_drawer_open } = run_panel;
     const { cancel_button_text, ok_button_text, title, message } = dialog_options as { [key: string]: string };
     const { clear } = summary_card;
+    const { ANALYSIS_TOOL } = DBOT_TABS;
     const { isDesktop } = useDevice();
 
-    const [bots, setBots] = useState<Bot[]>([]);
+
+    const [bots, setBots] = useState([]);
+    const [analysisToolUrl, setAnalysisToolUrl] = useState('ai');
+
+    const isAnalysisToolActive = active_tab === ANALYSIS_TOOL;
 
     useEffect(() => {
         if (connectionStatus !== CONNECTION_STATUS.OPENED) {
@@ -130,7 +119,6 @@ const AppWrapper = observer(() => {
                 'Wantam switcher.xml',
                 'Reborn HnR.xml',
             ];
-            
             const botPromises = botFiles.map(async (file) => {
                 try {
                     const response = await fetch(file);
@@ -141,23 +129,27 @@ const AppWrapper = observer(() => {
                     const parser = new DOMParser();
                     const xml = parser.parseFromString(text, 'application/xml');
                     return {
-                        title: file.split('/').pop() || file,
+                        title: file.split('/').pop(),
                         image: xml.getElementsByTagName('image')[0]?.textContent || 'default_image_path',
                         filePath: file,
                         xmlContent: text,
                     };
                 } catch (error) {
-                    // Silently handle fetch errors for bot files
+                    console.error(error);
                     return null;
                 }
             });
-            
-            const fetchedBots = (await Promise.all(botPromises)).filter((bot): bot is Bot => bot !== null);
-            setBots(fetchedBots);
+            const bots = (await Promise.all(botPromises)).filter(Boolean);
+            setBots(bots);
         };
 
         fetchBots();
     }, []);
+
+    const runBot = (xmlContent: string) => {
+        updateWorkspaceName(xmlContent);
+        console.log('Running bot with content:', xmlContent);
+    };
 
     const handleTabChange = React.useCallback(
         (tab_index: number) => {
@@ -166,45 +158,63 @@ const AppWrapper = observer(() => {
         [setActiveTab]
     );
 
-    const handleBotClick = useCallback(async (_bot: Bot) => {
+    const handleBotClick = useCallback(async (bot: { filePath: string; xmlContent: string }) => {
         setActiveTab(DBOT_TABS.BOT_BUILDER);
         try {
-            // Try to load the bot content using available methods
-            if (typeof load_modal.loadFileFromRecent === 'function') {
-                await load_modal.loadFileFromRecent();
+            console.log("Loading bot:", bot.title, bot.filePath);
+            console.log("XML Content:", bot.xmlContent);
+
+            if (typeof load_modal.loadFileFromContent === 'function') {
+                try {
+                    await load_modal.loadFileFromContent(bot.xmlContent);
+                    console.log("Bot loaded successfully!");
+                } catch (loadError) {
+                    console.error("Error in load_modal.loadFileFromContent:", loadError);
+                }
+            } else {
+                console.error("loadFileFromContent is not defined on load_modal");
             }
-            updateWorkspaceName();
+            updateWorkspaceName(bot.xmlContent);
         } catch (error) {
-            // Handle bot loading errors silently
+            console.error("Error loading bot file:", error);
         }
-    }, [setActiveTab, load_modal]);
+    }, [setActiveTab, load_modal, updateWorkspaceName]);
 
     const handleOpen = useCallback(async () => {
         await load_modal.loadFileFromRecent();
         setActiveTab(DBOT_TABS.BOT_BUILDER);
     }, [load_modal, setActiveTab]);
 
-    const showRunPanel = [DBOT_TABS.BOT_BUILDER, DBOT_TABS.CHART, DBOT_TABS.ANALYSIS_TOOL, DBOT_TABS.BULK_TRADING, DBOT_TABS.SIGNALS].includes(active_tab);
+    const toggleAnalysisTool = (url: string) => {
+        setAnalysisToolUrl(url);
+    };
+
+    const showRunPanel = [DBOT_TABS.BOT_BUILDER, DBOT_TABS.CHART, DBOT_TABS.ANALYSIS_TOOL, DBOT_TABS.SIGNALS].includes(active_tab);
 
     return (
         <React.Fragment>
             <div className='main'>
                 <div className='main__container'>
-                    <Tabs active_index={active_tab} className='main__tabs' onTabItemClick={handleTabChange} top>
+                    <Tabs active_index={active_tab} className='main__tabs' onTabItemChange={onEntered} onTabItemClick={handleTabChange} top>
+                        {/* Dashboard Tab - First */}
                         <div label={<><DashboardIcon /><Localize i18n_default_text='Dashboard' /></>} id='id-dbot-dashboard'>
                             <Dashboard handleTabChange={handleTabChange} />
                             <button onClick={handleOpen}>Load Bot</button>
                         </div>
+                        
+                        {/* Free Bots Tab - Second */}
                         <div label={<><FreeBotsIcon /><Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'>
                             <div className='free-bots'>
                                 <h2 className='free-bots__heading'><Localize i18n_default_text='Free Bots' /></h2>
                                 <div className='free-bots__content-wrapper'>
                                     <ul className='free-bots__content'>
-                                        {bots.map((botItem, index) => (
-                                            <li className='free-bot' key={index} onClick={() => handleBotClick(botItem)}>
+                                        {bots.map((bot, index) => (
+                                            <li className='free-bot' key={index} onClick={() => {
+                                                handleBotClick(bot);
+                                            }}>
                                                 <BotIcon />
                                                 <div className='free-bot__details'>
-                                                    <h3 className='free-bot__title'>{botItem.title}</h3>
+                                                    <h3 className='free-bot__title'>{bot.title}</h3>
                                                 </div>
                                             </li>
                                         ))}
@@ -212,16 +222,18 @@ const AppWrapper = observer(() => {
                                 </div>
                             </div>
                         </div>
-                        <div label={<><BotBuilderIcon /><Localize i18n_default_text='Bot Builder' /></>} id='id-bot-builder'>
-                            <Suspense fallback={<ChunkLoader message={localize('Please wait, loading bot builder...')} />}>
-                                <BotBuilder />
-                            </Suspense>
-                        </div>
+                        
+                        {/* Bot Builder Tab - Third */}
+                        <div label={<><BotBuilderIcon /><Localize i18n_default_text='Bot Builder' /></>} id='id-bot-builder' />
+                        
+                        {/* Charts Tab - Fourth */}
                         <div label={<><ChartsIcon /><Localize i18n_default_text='Charts' /></>} id='id-charts'>
                             <Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}>
                                 <Chart show_digits_stats={false} />
                             </Suspense>
                         </div>
+                        
+                        {/* Analysis Tool Tab - Fifth */}
                         <div label={<><AnalysisToolIcon /><Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'>
                             <div className={classNames('dashboard__chart-wrapper', {
                                 'dashboard__chart-wrapper--expanded': is_drawer_open && isDesktop,
@@ -232,22 +244,12 @@ const AppWrapper = observer(() => {
                                     width="100%"
                                     height="600px"
                                     style={{ border: 'none', display: 'block' }}
-                                    title="Analysis Tool"
+                                    scrolling="yes"
                                 />
                             </div>
                         </div>
-                        <div label={<><BulkTradingIcon /><Localize i18n_default_text='Bulk Trading' /></>} id='id-bulk-trading'>
-                            <div className={classNames('dashboard__chart-wrapper', {
-                                'dashboard__chart-wrapper--expanded': is_drawer_open && isDesktop,
-                                'dashboard__chart-wrapper--modal': is_chart_modal_visible && isDesktop,
-                            })}>
-                                {/* Bulk Trading content will be added here */}
-                                <div style={{ padding: '20px', textAlign: 'center' }}>
-                                    <h2>Bulk Trading</h2>
-                                    <p>Bulk Trading content will be implemented here.</p>
-                                </div>
-                            </div>
-                        </div>
+                        
+                        {/* The rest of the tabs follow in their original order */}
                         <div label={<><TutorialsIcon /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'>
                             <Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}>
                                 <Tutorial handleTabChange={handleTabChange} />
@@ -263,21 +265,16 @@ const AppWrapper = observer(() => {
                                     width="100%"
                                     height="600px"
                                     style={{ border: 'none', display: 'block' }}
-                                    title="Signals"
+                                    scrolling="yes"
                                 />
                             </div>
                         </div>
-                        <div label={<><TradingHubIcon /><Localize i18n_default_text='Trading Hub' /></>} id='id-trading-hub'>
+                        <div label={<><TradingHubIcon /><Localize i18n_default_text='Trading Hub' /></>} id='id-Trading-Hub'>
                             <div className={classNames('dashboard__chart-wrapper', {
                                 'dashboard__chart-wrapper--expanded': is_drawer_open && isDesktop,
                                 'dashboard__chart-wrapper--modal': is_chart_modal_visible && isDesktop,
                             })}>
-                                <iframe 
-                                    src='https://mekop.netlify.app' 
-                                    height='600px' 
-                                    style={{ border: 'none', width: '100%' }}
-                                    title="Trading Hub"
-                                />
+                                <iframe src='https://mekop.netlify.app' height='600px' frameBorder='0' />
                             </div>
                         </div>
                     </Tabs>
