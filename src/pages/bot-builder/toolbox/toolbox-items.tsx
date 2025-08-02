@@ -161,6 +161,14 @@ export const ToolboxItems = () =>
             <Category id='purchase_conditions' name={localize('Purchase conditions')}>
                 <Block type='before_purchase' />
                 <Block type='purchase' />
+                <Block type='bulk_purchase'>
+                    <Value name='NUM_TRADES'>
+                        <Shadow type='math_number'>
+                            <Field name='NUM'>5</Field>
+                        </Shadow>
+                    </Value>
+                    <Field name='CONTRACT_TYPE'>CALL</Field>
+                </Block>
             </Category>
             <Category id='sell_conditions' name={localize('Sell conditions (optional)')}>
                 <Block type='during_purchase' />
