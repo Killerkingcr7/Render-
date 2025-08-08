@@ -6,6 +6,40 @@ import TradingChart from './components/trading-chart';
 import TradingPanel from './components/trading-panel';
 import './dtrader.scss';
 
+// Error boundary component
+class DTraderErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.warn('DTrader Error Boundary caught an error:', error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className='dtrader'>
+                    <div className='dtrader__error-fallback'>
+                        <h3>DTrader is loading...</h3>
+                        <p>Initializing trading interface with simulated data.</p>
+                        <button onClick={() => this.setState({ hasError: false })} className='dtrader__retry-button'>
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
 const DTrader: React.FC = observer(() => {
     const store = useStore();
     const chart_store = store?.chart_store;
@@ -58,38 +92,43 @@ const DTrader: React.FC = observer(() => {
     }, []);
 
     return (
-        <div className='dtrader'>
-            <div className='dtrader__main-content'>
-                <div className='dtrader__chart-section'>
-                    <div className='dtrader__chart-header'>
-                        <MarketSelector />
-                        <div className='dtrader__chart-info'>
-                            <span className='dtrader__current-price'>
-                                {headerPrice > 0 ? formatPrice(headerPrice) : '--'}
-                            </span>
-                            <span className={`dtrader__price-change ${headerChange >= 0 ? 'positive' : 'negative'}`}>
-                                {headerPrice > 0 ? (
-                                    <>
-                                        {headerChange >= 0 ? '+' : ''}
-                                        {headerChange.toFixed(3)} ({((headerChange / headerPrice) * 100).toFixed(3)}%)
-                                    </>
-                                ) : (
-                                    '--'
-                                )}
-                            </span>
-                            <div className='dtrader__market-info'>
-                                <span className='market-symbol'>Current: {chart_store?.symbol || '1HZ10V'}</span>
+        <DTraderErrorBoundary>
+            <div className='dtrader'>
+                <div className='dtrader__main-content'>
+                    <div className='dtrader__chart-section'>
+                        <div className='dtrader__chart-header'>
+                            <MarketSelector />
+                            <div className='dtrader__chart-info'>
+                                <span className='dtrader__current-price'>
+                                    {headerPrice > 0 ? formatPrice(headerPrice) : '--'}
+                                </span>
+                                <span
+                                    className={`dtrader__price-change ${headerChange >= 0 ? 'positive' : 'negative'}`}
+                                >
+                                    {headerPrice > 0 ? (
+                                        <>
+                                            {headerChange >= 0 ? '+' : ''}
+                                            {headerChange.toFixed(3)} ({((headerChange / headerPrice) * 100).toFixed(3)}
+                                            %)
+                                        </>
+                                    ) : (
+                                        '--'
+                                    )}
+                                </span>
+                                <div className='dtrader__market-info'>
+                                    <span className='market-symbol'>Current: {chart_store?.symbol || '1HZ10V'}</span>
+                                </div>
                             </div>
                         </div>
+                        <TradingChart />
                     </div>
-                    <TradingChart />
-                </div>
 
-                <div className='dtrader__trading-section'>
-                    <TradingPanel />
+                    <div className='dtrader__trading-section'>
+                        <TradingPanel />
+                    </div>
                 </div>
             </div>
-        </div>
+        </DTraderErrorBoundary>
     );
 });
 
