@@ -116,105 +116,14 @@ const TradingChart: React.FC = observer(() => {
         }
     };
 
-    // Simulated data fallback when API is not available
-    const startSimulatedData = () => {
-        console.log('🎲 Starting simulated data mode');
-        setIsConnected(true);
-
-        // Generate initial price based on symbol
-        const basePrice = chart_store?.symbol?.includes('100')
-            ? 1000
-            : chart_store?.symbol?.includes('75')
-              ? 750
-              : chart_store?.symbol?.includes('50')
-                ? 500
-                : chart_store?.symbol?.includes('25')
-                  ? 250
-                  : 100;
-
-        let currentSimPrice = basePrice + Math.random() * 10;
-        setCurrentPrice(currentSimPrice);
-
-        // Generate initial history
-        const initialHistory = Array.from({ length: 100 }, (_, i) => {
-            const variation = (Math.random() - 0.5) * 2;
-            return basePrice + variation + i * 0.01;
-        });
-        setPriceHistory(initialHistory);
-
-        // Calculate initial digit stats
-        const initialStats: { [key: number]: number } = {};
-        initialHistory.forEach(price => {
-            const digit = getLastDigitFromPrice(price, chart_store?.symbol);
-            initialStats[digit] = (initialStats[digit] || 0) + 1;
-        });
-        setDigitStats(initialStats);
-
-        // Start price updates
-        const interval = setInterval(() => {
-            currentSimPrice += (Math.random() - 0.5) * 0.5;
-            const digit = getLastDigitFromPrice(currentSimPrice, chart_store?.symbol);
-
-            setCurrentPrice(prevPrice => {
-                const change = currentSimPrice - prevPrice;
-                setPriceChange(change);
-                setLastDigit(digit);
-
-                // Update history and stats
-                setPriceHistory(prev => {
-                    const newHistory = [...prev, currentSimPrice].slice(-1000);
-                    const newStats: { [key: number]: number } = {};
-                    newHistory.forEach(price => {
-                        const d = getLastDigitFromPrice(price, chart_store?.symbol);
-                        newStats[d] = (newStats[d] || 0) + 1;
-                    });
-                    setDigitStats(newStats);
-
-                    // Emit events for other components
-                    window.dispatchEvent(
-                        new CustomEvent('digitStatsUpdate', {
-                            detail: { digitStats: newStats, totalTicks: newHistory.length },
-                        })
-                    );
-
-                    return newHistory;
-                });
-
-                // Emit price update
-                window.dispatchEvent(
-                    new CustomEvent('priceUpdate', {
-                        detail: { price: currentSimPrice, change },
-                    })
-                );
-
-                window.dispatchEvent(
-                    new CustomEvent('lastDigitUpdate', {
-                        detail: { lastDigit: digit },
-                    })
-                );
-
-                return currentSimPrice;
-            });
-        }, 1000);
-
-        // Store interval for cleanup
-        return () => clearInterval(interval);
-    };
-
     // Real Deriv market data integration with 1000 tick analysis
     useEffect(() => {
         const subscribeToRealData = async () => {
             try {
                 setError('');
 
-                // Check if API is available, if not, use simulated data
                 if (!chart_api.api || !chart_store?.symbol) {
-                    console.log(
-                        '📊 API not available, using simulated data for',
-                        chart_store?.symbol || 'default symbol'
-                    );
-                    startSimulatedData();
-                    return;
+                    throw new Error('API or symbol not available');
                 }
 
                 console.log(`📊 Connecting to real Deriv data for ${chart_store.symbol}`);
@@ -321,9 +230,9 @@ const TradingChart: React.FC = observer(() => {
                 setIsConnected(true);
                 console.log('✅ Connected to real Deriv data');
             } catch (error) {
-                console.warn('⚠️ Real API failed, falling back to simulated data:', error);
-                // Don't show error to user, just fall back to simulated data
-                startSimulatedData();
+                console.error('❌ Failed to connect to Deriv API:', error);
+                setIsConnected(false);
+                setError('Failed to connect to Deriv API. Please check your connection and authentication.');
             }
         };
 

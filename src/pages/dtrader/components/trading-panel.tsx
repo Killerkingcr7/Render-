@@ -101,22 +101,20 @@ const TradingPanel: React.FC = observer(() => {
         setTradeParams(prev => ({ ...prev, [key]: value }));
     };
 
-    // Handle trade execution (demo mode)
+    // Handle trade execution (real trading - not implemented)
     const handleTrade = async (type: 'OVER' | 'UNDER') => {
         setIsTrading(true);
 
         try {
-            console.log('Placing trade:', {
+            console.log('Trade request:', {
                 ...tradeParams,
                 trade_type: type,
-                digit: selectedDigit,
                 symbol: chart_store?.symbol,
             });
 
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            alert(`Demo ${type} trade placed successfully for digit ${selectedDigit}!`);
+            // Real trading API integration would go here
+            // For now, show that real trading is not implemented
+            alert('Real trading is not implemented yet. This interface is for market data visualization only.');
         } catch (error) {
             console.error('Trade failed:', error);
             alert('Trade failed. Please try again.');
