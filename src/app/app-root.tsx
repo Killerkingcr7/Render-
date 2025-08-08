@@ -9,7 +9,7 @@ import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import './app-root.scss';
 
-const AppContent = lazy(() => import('./app-content'));
+const AppContent = lazy(() => import('./app-content.jsx'));
 
 const AppRootLoader = () => {
     return <ChunkLoader message={localize('Initializing Deriv Bot...')} />;
