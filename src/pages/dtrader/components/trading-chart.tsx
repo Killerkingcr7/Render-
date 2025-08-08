@@ -54,13 +54,17 @@ const TradingChart: React.FC = observer(() => {
                     console.log('✅ Chart API initialized successfully');
                 }
             } catch (error) {
-                console.warn('⚠️ Chart API initialization failed, using demo mode:', error);
-                // Don't set error state here, just log it
-                // The component will work with simulated data
+                console.warn('⚠️ Chart API initialization failed:', error);
+                setError('Failed to initialize API connection');
+                setIsConnected(false);
             }
         };
 
-        initializeAPI();
+        // Don't let initialization errors bubble up
+        initializeAPI().catch(() => {
+            setError('API initialization failed');
+            setIsConnected(false);
+        });
     }, []);
 
     // Cleanup all tick subscriptions on unmount
@@ -122,11 +126,20 @@ const TradingChart: React.FC = observer(() => {
             try {
                 setError('');
 
-                if (!chart_api.api || !chart_store?.symbol) {
-                    throw new Error('API or symbol not available');
+                if (!chart_api.api) {
+                    throw new Error('API not available - please check connection');
+                }
+
+                if (!chart_store?.symbol) {
+                    throw new Error('No symbol selected');
                 }
 
                 console.log(`📊 Connecting to real Deriv data for ${chart_store.symbol}`);
+
+                // Check if API connection is ready
+                if (!chart_api.api.connection || chart_api.api.connection.readyState !== WebSocket.OPEN) {
+                    throw new Error('API connection not ready');
+                }
 
                 const historyRequest = {
                     ticks_history: chart_store.symbol,
@@ -237,7 +250,12 @@ const TradingChart: React.FC = observer(() => {
         };
 
         if (chart_store?.symbol) {
-            subscribeToRealData();
+            // Don't let subscription errors bubble up
+            subscribeToRealData().catch(error => {
+                console.error('Subscription failed:', error);
+                setError('Failed to connect to market data');
+                setIsConnected(false);
+            });
         }
 
         // Cleanup subscription on unmount or symbol change
