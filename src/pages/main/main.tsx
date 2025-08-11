@@ -35,7 +35,22 @@ import {
 
 const Chart = lazy(() => import('../chart'));
 const Tutorial = lazy(() => import('../tutorials'));
-const DTrader = lazy(() => import('../dtrader'));
+const DTrader = lazy(() => {
+    console.log('🔍 Loading DTrader component...');
+    return import('../dtrader').catch(error => {
+        console.error('❌ Failed to load DTrader:', error);
+        // Return a fallback component
+        return {
+            default: () => (
+                <div style={{ padding: '2rem', textAlign: 'center' }}>
+                    <h3>DTrader Loading Error</h3>
+                    <p>Failed to load DTrader component: {error.message}</p>
+                    <button onClick={() => window.location.reload()}>Reload Page</button>
+                </div>
+            ),
+        };
+    });
+});
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -113,6 +128,7 @@ const AppWrapper = observer(() => {
 
     const handleTabChange = React.useCallback(
         (tab_index: number) => {
+            console.log('🔄 Tab changed to index:', tab_index, 'DTRADER index:', DBOT_TABS.DTRADER);
             setActiveTab(tab_index);
         },
         [setActiveTab]
@@ -245,6 +261,13 @@ const AppWrapper = observer(() => {
         DBOT_TABS.SIGNALS,
     ].includes(active_tab);
 
+    // Debug logging
+    useEffect(() => {
+        console.log('🔍 Main component rendered, active_tab:', active_tab);
+        console.log('🔍 DBOT_TABS:', DBOT_TABS);
+        console.log('🔍 DTrader should be at index:', DBOT_TABS.DTRADER);
+    }, [active_tab]);
+
     return (
         <React.Fragment>
             <div className='main'>
@@ -325,8 +348,18 @@ const AppWrapper = observer(() => {
                                 </>
                             }
                             id='id-dtrader'
+                            style={{ display: 'block' }} // Force visibility for debugging
                         >
-                            <Suspense fallback={<ChunkLoader message={localize('Loading DTrader...')} />}>
+                            <Suspense
+                                fallback={
+                                    <div style={{ padding: '2rem', textAlign: 'center' }}>
+                                        <div>🔄 Loading DTrader...</div>
+                                        <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '1rem' }}>
+                                            If this takes too long, there might be a loading issue.
+                                        </div>
+                                    </div>
+                                }
+                            >
                                 <DTrader />
                             </Suspense>
                         </div>
