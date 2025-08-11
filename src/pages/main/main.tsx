@@ -88,6 +88,7 @@ const AppWrapper = observer(() => {
                     const text = await response.text();
                     const parser = new DOMParser();
                     const xml = parser.parseFromString(text, 'application/xml');
+                    
                     return {
                         title: file.split('/').pop() || file,
                         image: xml.getElementsByTagName('image')[0]?.textContent || 'default_image_path',
@@ -125,25 +126,22 @@ const AppWrapper = observer(() => {
                 console.log('Loading bot:', bot.title, bot.filePath);
                 console.log('XML Content:', bot.xmlContent);
 
-                // Use the load function directly instead of load_modal.loadFileFromContent
-                await load({
-                    block_string: bot.xmlContent,
-                    file_name: bot.title,
-                    workspace: (window as unknown as { Blockly?: { derivWorkspace?: unknown } }).Blockly
-                        ?.derivWorkspace,
-                    from: save_types.UNSAVED,
-                    drop_event: {},
-                    strategy_id: null,
-                    showIncompatibleStrategyDialog: false,
-                });
-
-                updateWorkspaceName();
-                console.log('Bot loaded successfully!');
+                if (typeof load_modal.loadFileFromContent === 'function') {
+                    try {
+                        await load_modal.loadFileFromContent(bot.xmlContent);
+                        console.log('Bot loaded successfully!');
+                    } catch (loadError) {
+                        console.error('Error in load_modal.loadFileFromContent:', loadError);
+                    }
+                } else {
+                    console.error('loadFileFromContent is not defined on load_modal');
+                }
+                updateWorkspaceName(bot.xmlContent);
             } catch (error) {
                 console.error('Error loading bot file:', error);
             }
         },
-        [setActiveTab]
+        [setActiveTab, load_modal]
     );
 
     const handleOpen = useCallback(async () => {
@@ -218,18 +216,15 @@ const AppWrapper = observer(() => {
             await load({
                 block_string: bulkTradingBotXML,
                 file_name: 'Bulk Trading Bot',
-                workspace: (window as unknown as { Blockly?: { derivWorkspace?: unknown } }).Blockly?.derivWorkspace,
+                workspace: (window as any).Blockly?.derivWorkspace,
                 from: save_types.UNSAVED,
                 drop_event: {},
                 strategy_id: null,
                 showIncompatibleStrategyDialog: false,
             });
 
-            const windowWithBlockly = window as unknown as {
-                Blockly?: { derivWorkspace?: { strategy_to_load?: string } };
-            };
-            if (windowWithBlockly.Blockly?.derivWorkspace) {
-                windowWithBlockly.Blockly.derivWorkspace.strategy_to_load = bulkTradingBotXML;
+            if ((window as any).Blockly?.derivWorkspace) {
+                (window as any).Blockly.derivWorkspace.strategy_to_load = bulkTradingBotXML;
             }
 
             updateWorkspaceName();
@@ -242,7 +237,6 @@ const AppWrapper = observer(() => {
 
     const showRunPanel = [
         DBOT_TABS.BOT_BUILDER,
-        DBOT_TABS.DTRADER,
         DBOT_TABS.CHART,
         DBOT_TABS.ANALYSIS_TOOL,
         DBOT_TABS.BULK_TRADING,
@@ -318,11 +312,7 @@ const AppWrapper = observer(() => {
                                 </>
                             }
                             id='id-bot-builder'
-                        >
-                            <Suspense fallback={<ChunkLoader message={localize('Loading Bot Builder...')} />}>
-                                <BotBuilder />
-                            </Suspense>
-                        </div>
+                        />
 
                         {/* DTrader Tab - Fourth */}
                         <div

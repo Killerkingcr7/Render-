@@ -44,27 +44,50 @@ const TradingChart: React.FC = observer(() => {
         chartSubscriptionIdRef.current = chart_store?.chart_subscription_id || '';
     }, [chart_store?.chart_subscription_id]);
 
-    // Initialize chart API
+    // Initialize chart API with robust error handling
     useEffect(() => {
         const initializeAPI = async () => {
             try {
+                console.log('🔄 Attempting to initialize chart API...');
+                
+                // Try to initialize the API
                 if (!chart_api.api) {
-                    console.log('🔄 Initializing chart API...');
                     await chart_api.init();
+                }
+                
+                // Check if API is actually ready
+                if (chart_api.api && chart_api.api.connection) {
                     console.log('✅ Chart API initialized successfully');
+                    setIsConnected(true);
+                } else {
+                    throw new Error('API connection not established');
                 }
             } catch (error) {
                 console.warn('⚠️ Chart API initialization failed:', error);
-                setError('Failed to initialize API connection');
+                setError('Unable to connect to market data. This may be due to network issues or authentication requirements.');
                 setIsConnected(false);
             }
         };
 
-        // Don't let initialization errors bubble up
-        initializeAPI().catch(() => {
-            setError('API initialization failed');
+        // Initialize with timeout to prevent hanging
+        const timeoutId = setTimeout(() => {
+            setError('Connection timeout. Please check your internet connection.');
             setIsConnected(false);
-        });
+        }, 10000); // 10 second timeout
+
+        initializeAPI()
+            .catch((error) => {
+                console.warn('API initialization promise rejected:', error);
+                setError('Failed to establish connection to market data.');
+                setIsConnected(false);
+            })
+            .finally(() => {
+                clearTimeout(timeoutId);
+            });
+
+        return () => {
+            clearTimeout(timeoutId);
+        };
     }, []);
 
     // Cleanup all tick subscriptions on unmount
@@ -126,20 +149,33 @@ const TradingChart: React.FC = observer(() => {
             try {
                 setError('');
 
+                // Validate prerequisites
                 if (!chart_api.api) {
-                    throw new Error('API not available - please check connection');
+                    setError('API not initialized. Please refresh the page.');
+                    setIsConnected(false);
+                    return;
                 }
 
                 if (!chart_store?.symbol) {
-                    throw new Error('No symbol selected');
+                    setError('No market symbol selected.');
+                    setIsConnected(false);
+                    return;
                 }
 
-                console.log(`📊 Connecting to real Deriv data for ${chart_store.symbol}`);
-
-                // Check if API connection is ready
-                if (!chart_api.api.connection || chart_api.api.connection.readyState !== WebSocket.OPEN) {
-                    throw new Error('API connection not ready');
+                // Check WebSocket connection state
+                if (!chart_api.api.connection) {
+                    setError('No API connection available.');
+                    setIsConnected(false);
+                    return;
                 }
+
+                if (chart_api.api.connection.readyState !== WebSocket.OPEN) {
+                    setError('API connection not ready. Please wait or refresh.');
+                    setIsConnected(false);
+                    return;
+                }
+
+                console.log(`📊 Attempting to connect to real Deriv data for ${chart_store.symbol}`);
 
                 const historyRequest = {
                     ticks_history: chart_store.symbol,

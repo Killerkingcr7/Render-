@@ -6,53 +6,6 @@ import TradingChart from './components/trading-chart';
 import TradingPanel from './components/trading-panel';
 import './dtrader.scss';
 
-// Comprehensive error boundary to prevent modal interruptions
-class DTraderErrorBoundary extends React.Component<
-    { children: React.ReactNode },
-    { hasError: boolean; error: Error | null }
-> {
-    constructor(props: { children: React.ReactNode }) {
-        super(props);
-        this.state = { hasError: false, error: null };
-    }
-
-    static getDerivedStateFromError(error: Error) {
-        return { hasError: true, error };
-    }
-
-    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.warn('DTrader Error Boundary caught error:', error, errorInfo);
-        // Prevent the error from bubbling up to global handlers
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-    }
-
-    render() {
-        if (this.state.hasError) {
-            return (
-                <div className='dtrader'>
-                    <div className='dtrader__error-state'>
-                        <div className='error-icon'>⚠️</div>
-                        <h3>Connection Error</h3>
-                        <p>Unable to connect to Deriv API. Please check your connection.</p>
-                        <button
-                            onClick={() => {
-                                this.setState({ hasError: false, error: null });
-                                window.location.reload();
-                            }}
-                            className='retry-button'
-                        >
-                            Retry Connection
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-
-        return this.props.children;
-    }
-}
-
 const DTrader: React.FC = observer(() => {
     const store = useStore();
     const chart_store = store?.chart_store;
@@ -120,8 +73,7 @@ const DTrader: React.FC = observer(() => {
     }, []);
 
     return (
-        <DTraderErrorBoundary>
-            <div className='dtrader'>
+        <div className='dtrader'>
                 <div className='dtrader__main-content'>
                     <div className='dtrader__chart-section'>
                         <div className='dtrader__chart-header'>
@@ -156,7 +108,6 @@ const DTrader: React.FC = observer(() => {
                     </div>
                 </div>
             </div>
-        </DTraderErrorBoundary>
     );
 });
 

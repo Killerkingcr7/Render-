@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "🚀 Deploying Deriv Bot to Netlify..."
-echo "App ID: 88245"
+echo "App ID: 85159"
 echo "Domain: dectrading.netlify.app"
 echo ""
 
@@ -43,6 +43,6 @@ echo "2. Drag and drop the 'dist/' folder"
 echo "3. Or connect your GitHub repo for auto-deployment"
 echo ""
 echo "🎯 Your site will be available at: dectrading.netlify.app"
-echo "💰 Commission tracking with App ID 88245 is active!"
+echo "💰 Commission tracking with App ID 85159 is active!"
 echo ""
 echo "✅ Ready for deployment!"
