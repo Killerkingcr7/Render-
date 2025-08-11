@@ -35,22 +35,8 @@ import {
 
 const Chart = lazy(() => import('../chart'));
 const Tutorial = lazy(() => import('../tutorials'));
-const DTrader = lazy(() => {
-    console.log('🔍 Loading DTrader component...');
-    return import('../dtrader').catch(error => {
-        console.error('❌ Failed to load DTrader:', error);
-        // Return a fallback component
-        return {
-            default: () => (
-                <div style={{ padding: '2rem', textAlign: 'center' }}>
-                    <h3>DTrader Loading Error</h3>
-                    <p>Failed to load DTrader component: {error.message}</p>
-                    <button onClick={() => window.location.reload()}>Reload Page</button>
-                </div>
-            ),
-        };
-    });
-});
+// DTrader temporarily disabled for debugging
+// const DTrader = lazy(() => import('../dtrader'));
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -339,7 +325,7 @@ const AppWrapper = observer(() => {
                             id='id-bot-builder'
                         />
 
-                        {/* DTrader Tab - Fourth */}
+                        {/* DTrader Tab - Fourth - STATIC TEST */}
                         <div
                             label={
                                 <>
@@ -348,20 +334,36 @@ const AppWrapper = observer(() => {
                                 </>
                             }
                             id='id-dtrader'
-                            style={{ display: 'block' }} // Force visibility for debugging
                         >
-                            <Suspense
-                                fallback={
-                                    <div style={{ padding: '2rem', textAlign: 'center' }}>
-                                        <div>🔄 Loading DTrader...</div>
-                                        <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '1rem' }}>
-                                            If this takes too long, there might be a loading issue.
-                                        </div>
-                                    </div>
-                                }
-                            >
-                                <DTrader />
-                            </Suspense>
+                            <div style={{ padding: '2rem', textAlign: 'center' }}>
+                                <h3>🔧 DTrader Debug Mode</h3>
+                                <p>This is a test version to ensure the tab shows up.</p>
+                                <div
+                                    style={{
+                                        marginTop: '1rem',
+                                        padding: '1rem',
+                                        background: '#f0f0f0',
+                                        borderRadius: '4px',
+                                    }}
+                                >
+                                    <div>✅ Tab is visible</div>
+                                    <div>✅ Component is rendering</div>
+                                    <div>✅ No lazy loading issues</div>
+                                </div>
+                                <button
+                                    onClick={() => console.log('DTrader tab clicked!')}
+                                    style={{
+                                        marginTop: '1rem',
+                                        padding: '0.5rem 1rem',
+                                        background: '#007bff',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                    }}
+                                >
+                                    Test Click
+                                </button>
+                            </div>
                         </div>
 
                         {/* Charts Tab - Fifth */}
