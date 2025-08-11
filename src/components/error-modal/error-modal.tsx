@@ -19,6 +19,18 @@ const ErrorModal = ({ messages }: TErrorModalProps) => {
     const error_message_description = messages?.[0]?.toString();
 
     React.useEffect(() => {
+        // Check if we're in DTrader and suppress the modal
+        const isDTraderPath =
+            window.location.hash?.includes('dtrader') ||
+            window.location.pathname?.includes('dtrader') ||
+            document.querySelector('#id-dtrader')?.classList.contains('dc-tabs__item--active');
+
+        if (isDTraderPath) {
+            console.warn('Suppressing ErrorModal in DTrader');
+            setErrorModalOpen(false);
+            return;
+        }
+
         setErrorModalOpen(true);
     }, []);
 

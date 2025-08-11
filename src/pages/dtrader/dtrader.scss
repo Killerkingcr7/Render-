@@ -1367,3 +1367,75 @@
         margin: 0.5rem 4rem 1rem;
     }
 }
+
+// ===== ERROR BOUNDARY STYLES =====
+.dtrader__error-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 8px;
+}
+
+.dtrader__error-message {
+    text-align: center;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
+    max-width: 400px;
+
+    h3 {
+        color: #333;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    p {
+        color: #666;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+}
+
+// ===== LOADING STATES =====
+.dtrader__loading,
+.trading-chart__loading,
+.trading-panel__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+    background: #f8f9fa;
+    border-radius: 8px;
+
+    .loading-message {
+        color: #666;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+}
+
+.dtrader__retry-button {
+    background: #ff444f;
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background: #e63946;
+    }
+
+    &:active {
+        transform: translateY(1px);
+    }
+}

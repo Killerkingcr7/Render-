@@ -11,6 +11,17 @@ class ErrorBoundary extends React.Component {
     componentDidCatch = (error, info) => {
         if (window.TrackJS) window.TrackJS.console.log(this.props.root_store);
 
+        // Check if we're in DTrader and suppress the error modal
+        const isDTraderActive = this.props.root_store?.dashboard?.active_tab === 3; // DTRADER tab index
+        const isDTraderPath =
+            window.location.hash?.includes('dtrader') || window.location.pathname?.includes('dtrader');
+
+        if (isDTraderActive || isDTraderPath) {
+            console.warn('Suppressing error modal in DTrader:', error);
+            // Don't set hasError to true, just log the error
+            return;
+        }
+
         this.setState({
             hasError: true,
             error,

@@ -16,6 +16,17 @@ interface DigitStats {
 const TradingPanel: React.FC = observer(() => {
     const store = useStore();
     const chart_store = store?.chart_store;
+
+    // Show loading state if store is not ready
+    if (!store) {
+        return (
+            <div className='trading-panel'>
+                <div className='trading-panel__loading'>
+                    <div className='loading-message'>Loading trading panel...</div>
+                </div>
+            </div>
+        );
+    }
     const [tradeParams, setTradeParams] = useState<TradeParams>({
         amount: '10',
         duration: '5',
@@ -24,6 +35,7 @@ const TradingPanel: React.FC = observer(() => {
     const [isTrading, setIsTrading] = useState(false);
     const [digitStats, setDigitStats] = useState<DigitStats[]>([]);
     const [isUsingRealData, setIsUsingRealData] = useState(false);
+    const [selectedDigit, setSelectedDigit] = useState<number>(5); // Default selected digit
 
     // Listen for real-time digit statistics and last digit updates
     useEffect(() => {
@@ -61,7 +73,8 @@ const TradingPanel: React.FC = observer(() => {
 
         const handleLastDigitUpdate = (event: CustomEvent) => {
             const { lastDigit } = event.detail;
-            setCurrentLastDigit(lastDigit);
+            // Auto-select the current last digit for trading
+            setSelectedDigit(lastDigit);
         };
 
         // Add event listeners

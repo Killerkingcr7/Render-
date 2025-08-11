@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
 import { useStore } from '@/hooks/useStore';
@@ -22,6 +22,22 @@ const subscriptions: TSubscription = {};
 const TradingChart: React.FC = observer(() => {
     const store = useStore();
     const chart_store = store?.chart_store;
+
+    // Add error logging for debugging
+    useEffect(() => {
+        console.log('TradingChart mounted, store:', !!store, 'chart_store:', !!chart_store);
+    }, [store, chart_store]);
+
+    // Show loading state if store is not ready
+    if (!store || !chart_store) {
+        return (
+            <div className='trading-chart'>
+                <div className='trading-chart__loading'>
+                    <div className='loading-message'>Loading chart...</div>
+                </div>
+            </div>
+        );
+    }
     const [currentPrice, setCurrentPrice] = useState<number>(0);
     const [priceChange, setPriceChange] = useState<number>(0);
     const [lastDigit, setLastDigit] = useState<number>(0);
@@ -49,36 +65,35 @@ const TradingChart: React.FC = observer(() => {
         const initializeAPI = async () => {
             try {
                 console.log('🔄 Attempting to initialize chart API...');
-                
+
                 // Try to initialize the API
                 if (!chart_api.api) {
                     await chart_api.init();
                 }
-                
+
                 // Check if API is actually ready
                 if (chart_api.api && chart_api.api.connection) {
                     console.log('✅ Chart API initialized successfully');
                     setIsConnected(true);
                 } else {
-                    throw new Error('API connection not established');
+                    console.warn('API connection not established');
+                    setIsConnected(false);
                 }
             } catch (error) {
                 console.warn('⚠️ Chart API initialization failed:', error);
-                setError('Unable to connect to market data. This may be due to network issues or authentication requirements.');
                 setIsConnected(false);
             }
         };
 
-        // Initialize with timeout to prevent hanging
+        // Initialize with timeout
         const timeoutId = setTimeout(() => {
-            setError('Connection timeout. Please check your internet connection.');
+            console.warn('API initialization timeout');
             setIsConnected(false);
-        }, 10000); // 10 second timeout
+        }, 10000);
 
         initializeAPI()
-            .catch((error) => {
+            .catch(error => {
                 console.warn('API initialization promise rejected:', error);
-                setError('Failed to establish connection to market data.');
                 setIsConnected(false);
             })
             .finally(() => {
@@ -105,43 +120,45 @@ const TradingChart: React.FC = observer(() => {
     // };
 
     // Subscribe to tick data with proper error handling
-    const requestSubscribe = async (req: TicksStreamRequest, callback: (data: unknown) => void) => {
-        try {
-            // Clean up previous subscription
-            if (chartSubscriptionIdRef.current) {
-                chart_api.api.forget(chartSubscriptionIdRef.current);
-            }
+    const requestSubscribe = useCallback(
+        async (req: TicksStreamRequest, callback: (data: unknown) => void) => {
+            try {
+                // Clean up previous subscription
+                if (chartSubscriptionIdRef.current) {
+                    chart_api.api.forget(chartSubscriptionIdRef.current);
+                }
 
-            const history = await chart_api.api.send(req);
+                const history = await chart_api.api.send(req);
 
-            // Store subscription ID for cleanup
-            if (history?.subscription?.id) {
-                chart_store?.setChartSubscriptionId(history.subscription.id);
-            }
+                // Store subscription ID for cleanup
+                if (history?.subscription?.id) {
+                    chart_store?.setChartSubscriptionId(history.subscription.id);
+                }
 
-            // Process initial data
-            if (history) callback(history);
+                // Process initial data
+                if (history) callback(history);
 
-            // Set up real-time subscription
-            if (req.subscribe === 1) {
-                subscriptions[history?.subscription?.id] = chart_api.api
-                    .onMessage()
-                    ?.subscribe(({ data }: { data: TicksHistoryResponse }) => {
-                        callback(data);
-                    });
-            }
-        } catch (e) {
-            const error = e as TError;
-            if (error?.error?.code === 'MarketIsClosed') {
-                setError('Market is closed');
+                // Set up real-time subscription
+                if (req.subscribe === 1) {
+                    subscriptions[history?.subscription?.id] = chart_api.api
+                        .onMessage()
+                        ?.subscribe(({ data }: { data: TicksHistoryResponse }) => {
+                            callback(data);
+                        });
+                }
+            } catch (e) {
+                const error = e as TError;
+                if (error?.error?.code === 'MarketIsClosed') {
+                    console.warn('Market is closed');
+                    callback([]);
+                } else {
+                    console.warn('Subscription error:', error?.error?.message);
+                }
                 callback([]);
-            } else {
-                console.log('Subscription error:', error?.error?.message);
-                setError(error?.error?.message || 'Connection error');
             }
-            throw e;
-        }
-    };
+        },
+        [chart_store]
+    );
 
     // Real Deriv market data integration with 1000 tick analysis
     useEffect(() => {
@@ -151,26 +168,26 @@ const TradingChart: React.FC = observer(() => {
 
                 // Validate prerequisites
                 if (!chart_api.api) {
-                    setError('API not initialized. Please refresh the page.');
+                    console.warn('API not initialized');
                     setIsConnected(false);
                     return;
                 }
 
                 if (!chart_store?.symbol) {
-                    setError('No market symbol selected.');
+                    console.warn('No market symbol selected');
                     setIsConnected(false);
                     return;
                 }
 
                 // Check WebSocket connection state
                 if (!chart_api.api.connection) {
-                    setError('No API connection available.');
+                    console.warn('No API connection available');
                     setIsConnected(false);
                     return;
                 }
 
                 if (chart_api.api.connection.readyState !== WebSocket.OPEN) {
-                    setError('API connection not ready. Please wait or refresh.');
+                    console.warn('API connection not ready');
                     setIsConnected(false);
                     return;
                 }
@@ -279,17 +296,14 @@ const TradingChart: React.FC = observer(() => {
                 setIsConnected(true);
                 console.log('✅ Connected to real Deriv data');
             } catch (error) {
-                console.error('❌ Failed to connect to Deriv API:', error);
+                console.warn('❌ Failed to connect to Deriv API:', error);
                 setIsConnected(false);
-                setError('Failed to connect to Deriv API. Please check your connection and authentication.');
             }
         };
 
         if (chart_store?.symbol) {
-            // Don't let subscription errors bubble up
             subscribeToRealData().catch(error => {
-                console.error('Subscription failed:', error);
-                setError('Failed to connect to market data');
+                console.warn('Subscription failed:', error);
                 setIsConnected(false);
             });
         }
@@ -341,23 +355,26 @@ const TradingChart: React.FC = observer(() => {
     };
 
     // Calculate last digit exactly like Deriv does
-    const getLastDigitFromPrice = (price: number, symbol?: string) => {
-        const currentSymbol = symbol || chart_store?.symbol || '';
+    const getLastDigitFromPrice = useCallback(
+        (price: number, symbol?: string) => {
+            const currentSymbol = symbol || chart_store?.symbol || '';
 
-        // Deriv's exact method: use the appropriate decimal precision for each symbol
-        let multiplier = 100; // Default for 2 decimal places
+            // Deriv's exact method: use the appropriate decimal precision for each symbol
+            let multiplier = 100; // Default for 2 decimal places
 
-        // Adjust multiplier based on symbol's decimal places
-        if (['R_25', 'R_10', '1HZ30V', '1HZ90V', '1HZ15V'].includes(currentSymbol)) {
-            multiplier = 1000; // 3 decimal places
-        } else if (['R_50', 'R_75'].includes(currentSymbol)) {
-            multiplier = 10000; // 4 decimal places
-        }
+            // Adjust multiplier based on symbol's decimal places
+            if (['R_25', 'R_10', '1HZ30V', '1HZ90V', '1HZ15V'].includes(currentSymbol)) {
+                multiplier = 1000; // 3 decimal places
+            } else if (['R_50', 'R_75'].includes(currentSymbol)) {
+                multiplier = 10000; // 4 decimal places
+            }
 
-        // Round to avoid floating point precision issues
-        const scaledPrice = Math.round(price * multiplier);
-        return scaledPrice % 10;
-    };
+            // Round to avoid floating point precision issues
+            const scaledPrice = Math.round(price * multiplier);
+            return scaledPrice % 10;
+        },
+        [chart_store]
+    );
 
     // Calculate digit percentages from real data with smoothing
     const getDigitPercentage = (digit: number) => {

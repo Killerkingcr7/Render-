@@ -16,9 +16,18 @@ const AppRootLoader = () => {
 };
 
 const ErrorComponentWrapper = observer(() => {
-    const { common } = useStore();
+    const { common, dashboard } = useStore();
 
     if (!common.error) return null;
+
+    // Suppress error modal when in DTrader
+    const isDTraderActive = dashboard?.active_tab === 3; // DTRADER tab index
+    if (isDTraderActive) {
+        console.warn('Suppressing error modal in DTrader');
+        // Clear the error silently
+        common.setError(false, {});
+        return null;
+    }
 
     return (
         <ErrorComponent
@@ -48,8 +57,33 @@ const AppRoot = () => {
             }
         };
 
+        // Global error handler to prevent modals in DTrader
+        const handleUnhandledRejection = event => {
+            const isDTraderActive = store?.dashboard?.active_tab === 3;
+            if (isDTraderActive) {
+                console.warn('Suppressing unhandled rejection in DTrader:', event.reason);
+                event.preventDefault();
+            }
+        };
+
+        const handleError = event => {
+            const isDTraderActive = store?.dashboard?.active_tab === 3;
+            if (isDTraderActive) {
+                console.warn('Suppressing error in DTrader:', event.error);
+                event.preventDefault();
+            }
+        };
+
+        window.addEventListener('unhandledrejection', handleUnhandledRejection);
+        window.addEventListener('error', handleError);
+
         initializeApi();
-    }, []);
+
+        return () => {
+            window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+            window.removeEventListener('error', handleError);
+        };
+    }, [store]);
 
     if (!store || !is_api_initialized) return <AppRootLoader />;
 

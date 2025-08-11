@@ -35,7 +35,6 @@ import {
 
 const Chart = lazy(() => import('../chart'));
 const Tutorial = lazy(() => import('../tutorials'));
-const BotBuilder = lazy(() => import('../bot-builder'));
 const DTrader = lazy(() => import('../dtrader'));
 
 const AppWrapper = observer(() => {
@@ -88,7 +87,7 @@ const AppWrapper = observer(() => {
                     const text = await response.text();
                     const parser = new DOMParser();
                     const xml = parser.parseFromString(text, 'application/xml');
-                    
+
                     return {
                         title: file.split('/').pop() || file,
                         image: xml.getElementsByTagName('image')[0]?.textContent || 'default_image_path',
@@ -216,15 +215,18 @@ const AppWrapper = observer(() => {
             await load({
                 block_string: bulkTradingBotXML,
                 file_name: 'Bulk Trading Bot',
-                workspace: (window as any).Blockly?.derivWorkspace,
+                workspace: (window as unknown as { Blockly?: { derivWorkspace?: unknown } }).Blockly?.derivWorkspace,
                 from: save_types.UNSAVED,
                 drop_event: {},
                 strategy_id: null,
                 showIncompatibleStrategyDialog: false,
             });
 
-            if ((window as any).Blockly?.derivWorkspace) {
-                (window as any).Blockly.derivWorkspace.strategy_to_load = bulkTradingBotXML;
+            const windowWithBlockly = window as unknown as {
+                Blockly?: { derivWorkspace?: { strategy_to_load?: string } };
+            };
+            if (windowWithBlockly.Blockly?.derivWorkspace) {
+                windowWithBlockly.Blockly.derivWorkspace.strategy_to_load = bulkTradingBotXML;
             }
 
             updateWorkspaceName();
