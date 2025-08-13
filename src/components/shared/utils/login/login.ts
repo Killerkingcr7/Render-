@@ -4,7 +4,7 @@ export const redirectToLogin = () => {
     const redirectUri = `${currentOrigin}/callback`;
     
     // Construct the OAuth URL with proper redirect_uri
-    const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=85159&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=96171&redirect_uri=${encodeURIComponent(redirectUri)}`;
     
     console.log('🔐 Redirecting to OAuth with redirect_uri:', redirectUri);
     window.location.href = oauthUrl;

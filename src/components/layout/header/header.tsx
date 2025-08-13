@@ -198,7 +198,7 @@ const AppHeader = observer(() => {
                         const redirectUri = `${currentOrigin}/callback`;
                         
                         // Construct the OAuth URL with proper redirect_uri
-                        const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=85159&l=EN&brand=waited&redirect_uri=${encodeURIComponent(redirectUri)}`;
+                        const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=96171&l=EN&brand=waited&redirect_uri=${encodeURIComponent(redirectUri)}`;
                         
                         console.log('🔐 Header login redirecting to OAuth with redirect_uri:', redirectUri);
                         window.location.replace(oauthUrl);
