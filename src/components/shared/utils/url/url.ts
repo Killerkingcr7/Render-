@@ -9,9 +9,9 @@ type TOption = {
     language?: string;
 };
 
-const default_domain = 'dectrading.netlify.app';
+const default_domain = 'scofieldtradings.netlify.app';
 const host_map = {
-    'dectrading.netlify.app': 'dectrading.netlify.app'
+    'scofieldtradings.netlify.app': 'scofieldtradings.netlify.app'
 };
 
 let location_url: Location, default_language: string;
@@ -52,19 +52,19 @@ export const urlFor = (path: string, options: TOption = {}) => {
     const { legacy, language, query_string } = options;
 
     if (legacy && /^bot$/.test(path)) {
-        return `https://dectrading.netlify.app/`;
+        return `https://scofieldtradings.netlify.app/`;
     }
 
     const lang = language?.toLowerCase?.() ?? default_language;
-    let domain = `https://dectrading.netlify.app/`;
+    let domain = `https://scofieldtradings.netlify.app/`;
 
     if (legacy) {
         if (getPlatformFromUrl().is_staging_deriv_app) {
-            domain = domain.replace(/staging-app\.deriv\.com/, `dectrading.netlify.app/staging/${lang || 'en'}`);
+            domain = domain.replace(/staging-app\.deriv\.com/, `scofieldtradings.netlify.app/staging/${lang || 'en'}`);
         } else if (getPlatformFromUrl().is_deriv_app) {
-            domain = domain.replace(/app\.deriv\.com/, `dectrading.netlify.app/${lang || 'en'}`);
+            domain = domain.replace(/app\.deriv\.com/, `scofieldtradings.netlify.app/${lang || 'en'}`);
         } else {
-            domain = `https://dectrading.netlify.app/${lang || 'en'}/`;
+            domain = `https://scofieldtradings.netlify.app/${lang || 'en'}/`;
         }
     }
 
@@ -111,7 +111,7 @@ export const setUrlLanguage = (lang: string) => {
 };
 
 export const getStaticUrl = (path = '', is_document = false, is_eu_url = false) => {
-    const host = is_eu_url ? 'dectrading.netlify.app/' : 'dectrading.netlify.app';
+    const host = is_eu_url ? 'scofieldtradings.netlify.app/' : 'scofieldtradings.netlify.app';
     let lang = default_language?.toLowerCase();
 
     if (lang && lang !== 'en') {
@@ -122,7 +122,7 @@ export const getStaticUrl = (path = '', is_document = false, is_eu_url = false) 
 
     if (is_document) return `${host}/${normalizePath(path)}`;
 
-    if (host === 'dectrading.netlify.app' && lang.includes('_')) {
+    if (host === 'scofieldtradings.netlify.app' && lang.includes('_')) {
         lang = lang.replace('_', '-');
     }
 

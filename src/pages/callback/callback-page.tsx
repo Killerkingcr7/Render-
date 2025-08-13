@@ -6,6 +6,10 @@ const CallbackPage = () => {
     return (
         <Callback
             onSignInSuccess={async (tokens: Record<string, string>) => {
+                console.log('🎉 OAuth Callback Success!');
+                console.log('📋 Received tokens:', tokens);
+                console.log('🌐 Current URL:', window.location.href);
+                console.log('🔍 URL Search Params:', window.location.search);
                 const accountsList: Record<string, string> = {};
                 const clientAccounts: Record<string, { loginid: string; token: string; currency: string }> = {};
 

@@ -22,7 +22,7 @@ export const getPlatformFromUrl = (domain: string = window.location.hostname) =>
         is_test_link: /^(.*)\.binary\.sx$/i.test(domain),
         is_test_deriv_app: /^test-app\.deriv\.com$/i.test(domain),
         is_derivlite_com: /^bot\.derivlite\.com$/i.test(domain),
-        is_dectrading_netlify: /^dectrading\.netlify\.app$/i.test(domain), // Your domain
+        is_scofieldtradings_netlify: /^scofieldtradings\.netlify\.app$/i.test(domain), // Your domain
     };
 
     return {

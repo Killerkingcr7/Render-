@@ -24,7 +24,7 @@ export const domain_app_ids = {
     'dbot.deriv.be': APP_IDS.PRODUCTION_BE,
     'dbot.deriv.me': APP_IDS.PRODUCTION_ME,
     'bot.derivlite.com': APP_IDS.LIVE,
-    'dectrading.netlify.app': APP_IDS.LIVE, // Your domain
+    'scofieldtradings.netlify.app': APP_IDS.LIVE, // Your domain
 };
 
 export const getCurrentProductionDomain = () =>
