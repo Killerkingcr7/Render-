@@ -12,7 +12,7 @@
 
 -   ✅ Updated `domain_app_ids` to include `scofieldtrades.site`
 -   ✅ Added `www.scofieldtrades.site` for www subdomain support
--   ✅ Both domains map to App ID 88245 for commission tracking
+-   ✅ Both domains map to App ID 85159 for commission tracking
 
 ### 2. `/index.html`
 
@@ -66,7 +66,7 @@ export const domain_app_ids = {
 
 ## Commission Tracking
 
-✅ **App ID 88245** is configured for `scofieldtrades.site`
+✅ **App ID 85159** is configured for `scofieldtrades.site`
 ✅ **Commission tracking** will work automatically
 ✅ **Both www and non-www** versions supported
 
@@ -84,7 +84,7 @@ Your site is now fully configured for `scofieldtrades.site`:
 1. **Build**: `npm run build`
 2. **Deploy**: Upload `dist/` folder to your hosting
 3. **Test**: Visit `https://scofieldtrades.site`
-4. **Verify**: Check browser console for "Using App ID: 88245"
+4. **Verify**: Check browser console for "Using App ID: 85159"
 
 ## What Works on Live Host
 
@@ -92,7 +92,7 @@ Your site is now fully configured for `scofieldtrades.site`:
 
 -   DTrader interface (with error handling)
 -   Market data (real-time or demo mode)
--   Commission tracking (App ID 88245)
+-   Commission tracking (App ID 85159)
 -   All UI components and styling
 -   Bot builder functionality
 -   User authentication
@@ -114,6 +114,6 @@ Your site is now fully configured for `scofieldtrades.site`:
 
 **Status**: ✅ READY FOR LIVE DEPLOYMENT
 **Domain**: scofieldtrades.site
-**App ID**: 88245
+**App ID**: 85159
 **DTrader**: ✅ Working with error handling
 **Commission Tracking**: ✅ Active
