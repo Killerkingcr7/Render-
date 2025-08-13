@@ -9,25 +9,16 @@ import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import './app-root.scss';
 
-const AppContent = lazy(() => import('./app-content.jsx'));
+const AppContent = lazy(() => import('./app-content'));
 
 const AppRootLoader = () => {
     return <ChunkLoader message={localize('Initializing Deriv Bot...')} />;
 };
 
 const ErrorComponentWrapper = observer(() => {
-    const { common, dashboard } = useStore();
+    const { common } = useStore();
 
     if (!common.error) return null;
-
-    // Suppress error modal when in DTrader
-    const isDTraderActive = dashboard?.active_tab === 3; // DTRADER tab index
-    if (isDTraderActive) {
-        console.warn('Suppressing error modal in DTrader');
-        // Clear the error silently
-        common.setError(false, {});
-        return null;
-    }
 
     return (
         <ErrorComponent
@@ -57,33 +48,8 @@ const AppRoot = () => {
             }
         };
 
-        // Global error handler to prevent modals in DTrader
-        const handleUnhandledRejection = event => {
-            const isDTraderActive = store?.dashboard?.active_tab === 3;
-            if (isDTraderActive) {
-                console.warn('Suppressing unhandled rejection in DTrader:', event.reason);
-                event.preventDefault();
-            }
-        };
-
-        const handleError = event => {
-            const isDTraderActive = store?.dashboard?.active_tab === 3;
-            if (isDTraderActive) {
-                console.warn('Suppressing error in DTrader:', event.error);
-                event.preventDefault();
-            }
-        };
-
-        window.addEventListener('unhandledrejection', handleUnhandledRejection);
-        window.addEventListener('error', handleError);
-
         initializeApi();
-
-        return () => {
-            window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-            window.removeEventListener('error', handleError);
-        };
-    }, [store]);
+    }, []);
 
     if (!store || !is_api_initialized) return <AppRootLoader />;
 

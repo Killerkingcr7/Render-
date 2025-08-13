@@ -24,8 +24,7 @@ export const domain_app_ids = {
     'dbot.deriv.be': APP_IDS.PRODUCTION_BE,
     'dbot.deriv.me': APP_IDS.PRODUCTION_ME,
     'bot.derivlite.com': APP_IDS.LIVE,
-    'scofieldtrades.site': APP_IDS.LIVE, // Your domain
-    'www.scofieldtrades.site': APP_IDS.LIVE, // Your domain with www
+    'dectrading.netlify.app': APP_IDS.LIVE, // Your domain
 };
 
 export const getCurrentProductionDomain = () =>
@@ -73,12 +72,12 @@ export const getAppId = () => {
     let app_id = window.localStorage.getItem('config.app_id');
 
     if (!app_id || app_id === '69811') {
-        console.warn('⚠️ App ID is invalid, forcing correct App ID...');
+        console.warn("⚠️ App ID is invalid, forcing correct App ID...");
         app_id = '88245'; // Updated to use your app ID
         window.localStorage.setItem('config.app_id', app_id);
     }
 
-    console.log('🔍 [config.ts] Using App ID:', app_id);
+    console.log("🔍 [config.ts] Using App ID:", app_id);
     return app_id;
 };
 
@@ -116,7 +115,7 @@ export const generateOAuthURL = () => {
     const { getOauthURL } = URLUtils;
     const oauth_url = getOauthURL();
     const original_url = new URL(oauth_url);
-    const configured_server_url =
+    const configured_server_url = 
         LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
         localStorage.getItem('config.server_url') ||
         original_url.hostname;

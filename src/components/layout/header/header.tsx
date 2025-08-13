@@ -3,7 +3,6 @@ import { observer } from 'mobx-react-lite';
 import { standalone_routes } from '@/components/shared';
 import Button from '@/components/shared_ui/button';
 import useActiveAccount from '@/hooks/api/account/useActiveAccount';
-
 import { useApiBase } from '@/hooks/useApiBase';
 import { useStore } from '@/hooks/useStore';
 import { StandaloneCircleUserRegularIcon } from '@deriv/quill-icons/Standalone';
@@ -33,7 +32,7 @@ const InfoIcon = () => {
         },
         {
             name: 'Email',
-            url: 'bigmoney02800@gmail.com',
+            url: 'mailto:bigmoney02800@gmail.com',
             icon: (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM19.6 8.25L12.53 12.67C12.21 12.87 11.79 12.87 11.47 12.67L4.4 8.25C4.15 8.09 4 7.82 4 7.53C4 6.86 4.73 6.46 5.3 6.81L12 11L18.7 6.81C19.27 6.46 20 6.86 20 7.53C20 7.82 19.85 8.09 19.6 8.25Z" fill="#EA4335" />
@@ -119,23 +118,36 @@ const AppHeader = observer(() => {
     const [stake, setStake] = useState('');
     const [martingale, setMartingale] = useState('');
 
+    // Toggle handler: opens modal if not toggled yet, else disables toggle
     const handleToggle = () => {
         if (!isToggled) {
-            setIsModalOpen(true); // Open modal when toggled on
+            // Open modal to get inputs before enabling toggle
+            setIsModalOpen(true);
         } else {
-            setIsToggled(false); // Turn off toggle
+            // Turn off toggle when already ON
+            setIsToggled(false);
         }
     };
 
+    // Proceed handler for modal inputs validation and toggling
     const handleProceed = () => {
-        if (stake.trim() && martingale.trim()) {
-            setIsToggled(true); // Enable toggle only if inputs are valid
-            setIsModalOpen(false); // Close modal
+        // Basic validation: non-empty and positive numbers
+        if (
+            stake.trim() &&
+            martingale.trim() &&
+            !isNaN(Number(stake)) &&
+            Number(stake) > 0 &&
+            !isNaN(Number(martingale)) &&
+            Number(martingale) > 0
+        ) {
+            setIsToggled(true);
+            setIsModalOpen(false);
         } else {
-            alert('Please enter valid Stake and Martingale values.');
+            alert('Please enter valid positive numbers for Stake and Martingale.');
         }
     };
 
+    // Render account info and actions depending on auth state
     const renderAccountSection = () => {
         if (isAuthorizing) {
             return <AccountsInfoLoader isLoggedIn isMobile={!isDesktop} speed={3} />;
@@ -144,20 +156,20 @@ const AppHeader = observer(() => {
                 <>
                     {isDesktop && (
                         <Tooltip
-                            as='a'
+                            as="a"
                             href={standalone_routes.personal_details}
                             tooltipContent={localize('Manage account settings')}
-                            tooltipPosition='bottom'
-                            className='app-header__account-settings'
+                            tooltipPosition="bottom"
+                            className="app-header__account-settings"
                         >
-                            <StandaloneCircleUserRegularIcon className='app-header__profile_icon' />
+                            <StandaloneCircleUserRegularIcon className="app-header__profile_icon" />
                         </Tooltip>
                     )}
                     <AccountSwitcher activeAccount={activeAccount} />
-                    {isDesktop &&
-                        (has_wallet ? (
+                    {isDesktop ? (
+                        has_wallet ? (
                             <Button
-                                className='manage-funds-button'
+                                className="manage-funds-button"
                                 has_effect
                                 text={localize('Manage funds')}
                                 onClick={() => window.location.assign(standalone_routes.wallets_transfer)}
@@ -166,67 +178,59 @@ const AppHeader = observer(() => {
                         ) : (
                             <Button
                                 primary
-                                onClick={() => {
-                                    window.location.assign(standalone_routes.cashier_deposit);
-                                }}
-                                className='deposit-button'
+                                onClick={() => window.location.assign(standalone_routes.cashier_deposit)}
+                                className="deposit-button"
                             >
                                 {localize('Deposit')}
                             </Button>
-                        ))}
+                        )
+                    ) : null}
                 </>
             );
-        } else {
-            return (
-                <div className='auth-actions'>
-                    <Button
-                        tertiary
-                        onClick={() => {
-                            window.location.replace('https://oauth.deriv.com/oauth2/authorize?app_id=85159&l=EN&brand=waited');
-                        }}
-                    >
-                        <Localize i18n_default_text='Log in' />
-                    </Button>
-                    <Button
-                        primary
-                        onClick={() => {
-                            window.open(standalone_routes.signup);
-                        }}
-                    >
-                        <Localize i18n_default_text='Sign up' />
-                    </Button>
-                </div>
-            );
         }
+        return (
+            <div className="auth-actions">
+                <Button
+                    tertiary
+                    onClick={() => {
+                        window.location.replace(
+                            'https://oauth.deriv.com/oauth2/authorize?app_id=88245&l=EN&brand=waited'
+                        );
+                    }}
+                >
+                    <Localize i18n_default_text="Log in" />
+                </Button>
+                <Button
+                    primary
+                    onClick={() => {
+                        window.open(standalone_routes.signup);
+                    }}
+                >
+                    <Localize i18n_default_text="Sign up" />
+                </Button>
+            </div>
+        );
     };
 
     return (
         <Header
             className={clsx('app-header', {
                 'app-header--desktop': isDesktop,
-                'app-header--mobile': !isDesktop,
+                'app-header--mobile': !isDesktop
             })}
         >
-            <Wrapper variant='left'>
+            <Wrapper variant="left">
                 <AppLogo />
                 <MobileMenu />
                 <InfoIcon />
-                <button
-                    className="app-header__toggle"
-                    onClick={handleToggle}
-                    aria-pressed={isToggled}
-                >
+                <button className="app-header__toggle" onClick={handleToggle} aria-pressed={isToggled}>
                     {isToggled ? 'ON' : 'OFF'}
                 </button>
             </Wrapper>
-            <Wrapper variant='right'>{renderAccountSection()}</Wrapper>
+            <Wrapper variant="right">{renderAccountSection()}</Wrapper>
 
             {isModalOpen && (
-                <Modal
-                    is_open={isModalOpen}
-                    toggleModal={() => setIsModalOpen(false)}
-                    title="Select Stake and Martingale"
-                >
+                <Modal is_open={isModalOpen} toggleModal={() => setIsModalOpen(false)} title="Select Stake and Martingale">
                     <div className="modal-content">
                         <label>
                             Stake:
@@ -235,6 +239,8 @@ const AppHeader = observer(() => {
                                 value={stake}
                                 onChange={e => setStake(e.target.value)}
                                 placeholder="Enter stake"
+                                min="0"
+                                step="any"
                             />
                         </label>
                         <label>
@@ -244,6 +250,8 @@ const AppHeader = observer(() => {
                                 value={martingale}
                                 onChange={e => setMartingale(e.target.value)}
                                 placeholder="Enter martingale"
+                                min="0"
+                                step="any"
                             />
                         </label>
                         <button onClick={handleProceed} className="proceed-button">

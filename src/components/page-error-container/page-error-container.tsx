@@ -15,29 +15,6 @@ type TPageErrorContainer = {
 };
 
 const PageErrorContainer = ({ error_header, error_messages, ...props }: TPageErrorContainer) => {
-    // Check if we're in DTrader and suppress all error modals
-    const isDTraderPath =
-        window.location.hash?.includes('dtrader') ||
-        window.location.pathname?.includes('dtrader') ||
-        document.querySelector('#id-dtrader')?.classList.contains('dc-tabs__item--active');
-
-    // Also check if DTrader tab is active by looking at tab classes
-    const dtraderTabActive = document
-        .querySelector('.dc-tabs__item:nth-child(4)')
-        ?.classList.contains('dc-tabs__item--active');
-
-    console.log('PageErrorContainer check:', {
-        isDTraderPath,
-        dtraderTabActive,
-        hash: window.location.hash,
-        activeTab: document.querySelector('.dc-tabs__item--active')?.textContent,
-    });
-
-    if (isDTraderPath || dtraderTabActive) {
-        console.warn('Suppressing all error modals in DTrader');
-        return null;
-    }
-
     if (error_header && error_messages) {
         return <PageError header={error_header} messages={error_messages} {...props} />;
     }

@@ -41,25 +41,6 @@ const UnhandledErrorModal = () => {
     const [is_page_error_modal_open, setPageErrorModalOpen] = React.useState<boolean>(false);
 
     React.useEffect(() => {
-        // Check if we're in DTrader and suppress the modal
-        const isDTraderPath =
-            window.location.hash?.includes('dtrader') ||
-            window.location.pathname?.includes('dtrader') ||
-            document.querySelector('#id-dtrader')?.classList.contains('dc-tabs__item--active');
-
-        console.log('UnhandledErrorModal check:', {
-            hash: window.location.hash,
-            pathname: window.location.pathname,
-            isDTraderPath,
-            dtraderElement: document.querySelector('#id-dtrader'),
-        });
-
-        if (isDTraderPath) {
-            console.warn('Suppressing UnhandledErrorModal in DTrader');
-            setPageErrorModalOpen(false);
-            return;
-        }
-
         setPageErrorModalOpen(true);
     }, []);
 
